@@ -39,7 +39,7 @@ t = np.linspace(0.0, T, Nt + 1, endpoint=True)
 
 # Diffusion coefficient 
 def D(t, x, y):
-    return 0.01 / (30**2)
+    return 0.00001
 
 # Mortality coefficient.
 def K(t, x, y):
@@ -85,8 +85,7 @@ def u0(x,y): #condition initiale
 
 # Growth velocities in normalized variables
 
-
-rh = 0.8 / 30.0
+rh = 0.65 / 30.0
 
 def Ch(t, x, y):
     return rh * (1 - x / Lx)
@@ -145,9 +144,7 @@ U[0, :, :] = u0_values
 N = Nx * Ny
 
 
-# ============================================================
-# 8. Time loop
-# ============================================================
+#  Time loop
 
 for n in range(Nt):
 
@@ -287,10 +284,7 @@ for n in range(Nt):
                 else:
                     upwindyMoins = Sij * U[n, i, j]
 
-            # ------------------------------------------------
-            # 8.4. Discrete divergence of the transport flux
-            # ------------------------------------------------
-            #
+            # ------------------------------------------------            
             # Boundary fluxes are set to zero.
             # The following cases implement the interior points,
             # edges, and corners separately.
@@ -407,26 +401,69 @@ for n in range(Nt):
     U[n+1, :, :] = Unext.reshape((Nx, Ny))
 
 
-#  Plot of the initial and final solution in physical variables
+#Computation of top height (mean height, in metres, of the 100 trees of largest dbh)
+
+# Plot of the initial and final solution in physical variables
 
 Hphys = 30.0
 Dphys = 0.45
 
 # Hauteurs physiques en mètres
 h_phys = x * Hphys
+# Diamètres physiques en mètre
+d_phys = y * Dphys
 
-# Nombre d'arbres par classe de hauteur au temps initial
+def topHeight (V):
+    """ Approximate top height:
+    mean height of the target stems/ha with largest DBH.
+    V is U[n,:,:] at a given time."""
+    cells = []
+    for i in range(len(x)):
+        for j in range(len(y)):
+            numberOftrees=dx*dy*V[i,j]
+            if numberOftrees>0:
+                cells.append((d_phys[j], h_phys[i], numberOftrees))
+    # Sort cells from largest DBH to smallest DBH
+    cells.sort(key=lambda z: z[0], reverse=True)
+
+    totaltrees=0.
+    height_sum=0.
+
+    for dbh, height, numbertrees in cells:
+        remaining = 100 - totaltrees
+        if numbertrees<=remaining:
+            usedtrees=numbertrees
+        else:
+            usedtrees=remaining
+
+        height_sum +=usedtrees*height
+        totaltrees+=usedtrees
+
+        if totaltrees>=100:
+            break
+
+    return height_sum/totaltrees
+
+#We save the top height at time t in the following list
+ValueTopHeight=[]
+for n in range(len(t)):
+    ValueTopHeight.append(topHeight(U[n,:,:]))
+
+print("Simulated top height at stand age 40 =", topHeight (U[5000,:,:]), "m")
+print("Simulated top height at stand age 60 =", topHeight (U[-1,:,:]), "m")
+
+# Distribution of trees by height class at the initial time
 height_counts1 = dx * dy * np.sum(U[0, :, :], axis=1)
 
 plt.figure(figsize=(6, 4))
 plt.bar(h_phys, height_counts1, width=Hphys*dx, align='center')
 plt.xlabel("height h (m)")
 plt.ylabel("number of trees")
-plt.title("Initial Distribution of trees (t=20 years) by height class")
+plt.title("Initial Distribution of trees (t=20 year) by height class")
 plt.grid()
 plt.show()
 
-# Nombre d'arbres par classe de hauteur à la moitié du temps 
+# Distribution of trees by height class at the intermediate time
 
 height_counts3 = dx * dy * np.sum(U[5000, :, :], axis=1)
 
@@ -438,7 +475,7 @@ plt.title("Distribution of trees by height class at time t=40 years")
 plt.grid()
 plt.show()
 
-# Nombre d'arbres par classe de hauteur au temps final
+# Distribution of trees by height class at the final time
 
 height_counts2 = dx * dy * np.sum(U[-1, :, :], axis=1)
 
@@ -450,23 +487,23 @@ plt.title("Final Distribution of trees (t=60 years) by height class")
 plt.grid()
 plt.show()
 
-# Diamètres physiques en cm
-diam_cm = y[1:] * Dphys * 100
+# DBH in cm
+diam_cm = d_phys * 100
 
-# Nombre d'arbres par classe de diamètre au temps initial
-diam_counts1 = dx * dy * np.sum(U[0, 1:, 1:], axis=0)
+# Distribution of trees by DBH class at the initial time
+diam_counts1 = dx * dy * np.sum(U[0, :, :], axis=0)
 
 plt.figure(figsize=(6, 4))
 plt.bar(diam_cm, diam_counts1, width=100 * Dphys * dy)
 plt.xlabel("DBH $\\phi$ (cm)")
 plt.ylabel("number of trees")
-plt.title("Initial distribution of trees (t=20 years) by DBH class")
+plt.title("Initial distribution of trees (t=20 year) by DBH class")
 plt.grid()
 plt.show()
 
-# Nombre d'arbres par classe de diamètre à la moitié du temps
+# Distribution of trees by DBH class at the intermediate time
 
-diam_counts3 = dx * dy * np.sum(U[5000, 1:, 1:], axis=0)
+diam_counts3 = dx * dy * np.sum(U[5000, :, :], axis=0)
 
 plt.figure(figsize=(6, 4))
 plt.bar(diam_cm, diam_counts3, width=100 * Dphys * dy)
@@ -476,8 +513,9 @@ plt.title("Distribution of trees by DBH class at time t=40 years")
 plt.grid()
 plt.show()
 
-# Nombre d'arbres par classe de diamètre au temps final
-diam_counts2 = dx * dy * np.sum(U[-1, 1:, 1:], axis=0)
+# Distribution of trees by DBH class at the final time
+
+diam_counts2 = dx * dy * np.sum(U[-1, :, :], axis=0)
 
 plt.figure(figsize=(6, 4))
 plt.bar(diam_cm, diam_counts2, width=100 * Dphys * dy)
@@ -487,7 +525,7 @@ plt.title("Final distribution of trees (t=60 years) by DBH class")
 plt.grid()
 plt.show()
 
-# Diagnostics: total mass and positivity
+# total mass and positivity
 
 # Total mass at each time step.
 mass = np.zeros(Nt + 1)
@@ -503,10 +541,21 @@ print("Initial mass =", mass[0])
 print("Final mass   =", mass[-1])
 print("Minimum U    =", np.min(U))
 
-plt.figure()
-plt.plot(t, mass)
-plt.xlabel("time")
-plt.ylabel("total mass")
+age = 20.0 + t 
+
+plt.figure(figsize=(6, 4))
+plt.plot(age, mass)
+plt.xlabel("time (years)")
+plt.ylabel("number of trees")
 plt.title("Total number of trees")
+plt.grid()
+plt.show()
+
+#plot of top height over the years
+plt.figure(figsize=(6, 4))
+plt.plot(age, ValueTopHeight)
+plt.xlabel("time (years)")
+plt.ylabel("Top height")
+plt.title("Top height")
 plt.grid()
 plt.show()
