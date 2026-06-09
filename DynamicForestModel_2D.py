@@ -5,12 +5,15 @@ import matplotlib.pyplot as plt
 
 # We work with normalized variables, therefore, the computational domain is (0,1) x (0,1).
 
+Hphys = 50.0 # Physical height
+Dphys = 0.9 # Physical DBH 
+
 Lx = 1.0
 Ly = 1.0
 
 # Final time in years.
-# Here T = 40 means that we simulate the stand over 40 years.
-T = 40
+# Here T = 51 means that we simulate the stand over 51 years.
+T = 51
 
 # Number of grid points in the two size directions.
 Nx = 40
@@ -26,7 +29,7 @@ dt = T / Nt
 
 # Total initial number of trees per hectare.
 
-N0 = 4186
+N0 = 2154.6
 # Spatial grids in normalized variables.
 x = np.linspace(0.0, Lx, Nx, endpoint=True)
 y = np.linspace(0.0, Ly, Ny, endpoint=True)
@@ -43,21 +46,24 @@ def D(t, x, y):
 
 # Mortality coefficient.
 def K(t, x, y):
-    return 0.05
+    return 0.0365
+
 
 
 # Initial condition
 
 # Center of the Gaussian initial condition in normalized variables.
 
-h0 = 8.1 / 30.0
-d0 = 0.09 / 0.45
+h0 = 10.50887557 / Hphys
+d0 = 0.1176045686  / Dphys
 
 # Standard deviations in normalized variables.
 
-sigh = 1.5/30
-sigd = 0.02/0.45
+sigh = 1.5/Hphys
+sigd = 0.04 /Dphys
 
+def Gauss(x,y):
+    return np.exp( -(x-h0)**2/(2*sigh**2) -(y-d0)**2/(2*sigd**2) )
 # We compute the normalization constant Z0 so that
 # integral u0(x,y) dx dy = N0.
 #
@@ -69,28 +75,28 @@ Zc = np.zeros((Nx, Ny))
 Zc[0, :] = 0.0
 Zc[:, 0] = 0.0
 
-# Cumulative rectangle rule.
+# Cumulative 2D trapezoidal rule.
 for i in range(1,Nx): 
         for j in range(1,Ny):
-            Zc[i,j]=Zc[i-1,j]+Zc[i,j-1]-Zc[i-1,j-1]+dy*dx*(np.exp( -(x[i]-h0)**2/(2*sigh**2) -(y[j]-d0)**2/(2*sigd**2) ))
-
+            Zc[i,j]=Zc[i-1,j]+Zc[i,j-1]-Zc[i-1,j-1]+(1./4.)*dy*dx*(Gauss(x[i],y[j])+Gauss(x[i-1],y[j])+Gauss(x[i],y[j-1])+Gauss(x[i-1],y[j-1]))             
+       
 # Normalization constant.
 Z0 = Zc[-1, -1]
 
 # Initial density.
 # The factor N0/Z0 ensures that the total initial mass is approximately N0.
 def u0(x,y): #condition initiale
-    return np.exp( -(x-h0)**2/(2*sigh**2) -(y-d0)**2/(2*sigd**2) )*N0/Z0
+    return Gauss(x,y)*N0/Z0
 
 
 # Growth velocities in normalized variables
 
-rh = 0.65 / 30.0
+rh = 1.78 / Hphys
 
 def Ch(t, x, y):
     return rh * (1 - x / Lx)
 
-rd = 0.008 / 0.45
+rd = 0.0135 / Dphys
 
 def Cd(t, x, y):
     return rd * (1 - y / Ly)
@@ -160,7 +166,7 @@ for n in range(Nt):
 
     for i in range(1, Nx):
         for j in range(1, Ny):
-            J[i,j]=J[i-1,j]+J[i,j-1]-J[i-1,j-1]+dy*dx*U[n,i,j]
+            J[i,j]=J[i-1,j]+J[i,j-1]-J[i-1,j-1]+(1./4.)*dy*dx*(U[n,i,j]+U[n,i-1,j] + U[n,i,j-1] + U[n,i-1,j-1]) # 2D trapezoidal rule
 
     # Total mass of the population at time t^n.
     # This is the denominator in the status function.
@@ -187,28 +193,28 @@ for n in range(Nt):
 
             if i < Nx - 1:
                 aE = 0.5 * (
-                    D(t[n], x[i], y[j]) + D(t[n], x[i+1], y[j])
+                    D(t[n+1], x[i], y[j]) + D(t[n+1], x[i+1], y[j])
                 ) / (dx * dx)
             else:
                 aE = 0.0
 
             if i > 0:
                 aW = 0.5 * (
-                    D(t[n], x[i], y[j]) + D(t[n], x[i-1], y[j])
+                    D(t[n+1], x[i], y[j]) + D(t[n+1], x[i-1], y[j])
                 ) / (dx * dx)
             else:
                 aW = 0.0
 
             if j < Ny - 1:
                 aN = 0.5 * (
-                    D(t[n], x[i], y[j]) + D(t[n], x[i], y[j+1])
+                    D(t[n+1], x[i], y[j]) + D(t[n+1], x[i], y[j+1])
                 ) / (dy * dy)
             else:
                 aN = 0.0
 
             if j > 0:
                 aS = 0.5 * (
-                    D(t[n], x[i], y[j]) + D(t[n], x[i], y[j-1])
+                    D(t[n+1], x[i], y[j]) + D(t[n+1], x[i], y[j-1])
                 ) / (dy * dy)
             else:
                 aS = 0.0
@@ -405,12 +411,9 @@ for n in range(Nt):
 
 # Plot of the initial and final solution in physical variables
 
-Hphys = 30.0
-Dphys = 0.45
-
-# Hauteurs physiques en mètres
+# Height in physical values 
 h_phys = x * Hphys
-# Diamètres physiques en mètre
+# Diam in physical values
 d_phys = y * Dphys
 
 def topHeight (V):
@@ -449,8 +452,32 @@ ValueTopHeight=[]
 for n in range(len(t)):
     ValueTopHeight.append(topHeight(U[n,:,:]))
 
-print("Simulated top height at stand age 40 =", topHeight (U[5000,:,:]), "m")
-print("Simulated top height at stand age 60 =", topHeight (U[-1,:,:]), "m")
+print("Simulated top height at stand age 45 =", topHeight (U[5294,:,:]), "m")
+print("Simulated top height at stand age 69 =", topHeight (U[-1,:,:]), "m")
+
+# Basal_area calculation  G=pi/4 int_0^H int_0^D d^2 n(h,d) dh dd
+def basal_area(V):
+    G = 0.0
+    for i in range(len(x)):
+        for j in range(len(y)):
+            if i==0 or i==Nx-1:
+                wx=0.5
+            else:
+                wx= 1.0 
+            if j==0 or j==Ny-1:
+                wy=0.5
+            else:
+                wy= 1.0 
+            G+=(np.pi/4.)*dx*dy*wx*wy*(d_phys[j]**2)*V[i,j]
+    return G
+
+# We save the basal area at time t in the following list
+ValueBasalArea=[]
+for n in range(len(t)):
+    ValueBasalArea.append(basal_area(U[n,:,:]))
+
+print("Simulated basal area at stand age 45 =", basal_area (U[5294,:,:]), "m²/ha")
+print("Simulated basal area at stand age 69 =", basal_area (U[-1,:,:]), "m²/ha")
 
 # Distribution of trees by height class at the initial time
 height_counts1 = dx * dy * np.sum(U[0, :, :], axis=1)
@@ -459,19 +486,19 @@ plt.figure(figsize=(6, 4))
 plt.bar(h_phys, height_counts1, width=Hphys*dx, align='center')
 plt.xlabel("height h (m)")
 plt.ylabel("number of trees")
-plt.title("Initial Distribution of trees (t=20 year) by height class")
+plt.title("Initial Distribution of trees (t=18 year) by height class")
 plt.grid()
 plt.show()
 
 # Distribution of trees by height class at the intermediate time
 
-height_counts3 = dx * dy * np.sum(U[5000, :, :], axis=1)
+height_counts3 = dx * dy * np.sum(U[5294, :, :], axis=1)
 
 plt.figure(figsize=(6, 4))
 plt.bar(h_phys, height_counts3, width=Hphys*dx, align='center')
 plt.xlabel("height h (m)")
 plt.ylabel("number of trees")
-plt.title("Distribution of trees by height class at time t=40 years")
+plt.title("Distribution of trees by height class at time t=45 years")
 plt.grid()
 plt.show()
 
@@ -483,7 +510,7 @@ plt.figure(figsize=(6, 4))
 plt.bar(h_phys, height_counts2, width=Hphys*dx, align='center')
 plt.xlabel("height h (m)")
 plt.ylabel("number of trees")
-plt.title("Final Distribution of trees (t=60 years) by height class")
+plt.title("Final Distribution of trees (t=69 years) by height class")
 plt.grid()
 plt.show()
 
@@ -497,19 +524,19 @@ plt.figure(figsize=(6, 4))
 plt.bar(diam_cm, diam_counts1, width=100 * Dphys * dy)
 plt.xlabel("DBH $\\phi$ (cm)")
 plt.ylabel("number of trees")
-plt.title("Initial distribution of trees (t=20 year) by DBH class")
+plt.title("Initial distribution of trees (t=18 year) by DBH class")
 plt.grid()
 plt.show()
 
 # Distribution of trees by DBH class at the intermediate time
 
-diam_counts3 = dx * dy * np.sum(U[5000, :, :], axis=0)
+diam_counts3 = dx * dy * np.sum(U[5294, :, :], axis=0)
 
 plt.figure(figsize=(6, 4))
 plt.bar(diam_cm, diam_counts3, width=100 * Dphys * dy)
 plt.xlabel("DBH $\\phi$ (cm)")
 plt.ylabel("number of trees")
-plt.title("Distribution of trees by DBH class at time t=40 years")
+plt.title("Distribution of trees by DBH class at time t=45 years")
 plt.grid()
 plt.show()
 
@@ -521,7 +548,7 @@ plt.figure(figsize=(6, 4))
 plt.bar(diam_cm, diam_counts2, width=100 * Dphys * dy)
 plt.xlabel("DBH $\\phi$ (cm)")
 plt.ylabel("number of trees")
-plt.title("Final distribution of trees (t=60 years) by DBH class")
+plt.title("Final distribution of trees (t=69 years) by DBH class")
 plt.grid()
 plt.show()
 
@@ -541,7 +568,7 @@ print("Initial mass =", mass[0])
 print("Final mass   =", mass[-1])
 print("Minimum U    =", np.min(U))
 
-age = 20.0 + t 
+age = 18.0 + t 
 
 plt.figure(figsize=(6, 4))
 plt.plot(age, mass)
@@ -555,7 +582,16 @@ plt.show()
 plt.figure(figsize=(6, 4))
 plt.plot(age, ValueTopHeight)
 plt.xlabel("time (years)")
-plt.ylabel("Top height")
+plt.ylabel("Top height (m)")
 plt.title("Top height")
+plt.grid()
+plt.show()
+
+#plot of the basal area over the years
+plt.figure(figsize=(6, 4))
+plt.plot(age, ValueBasalArea)
+plt.xlabel("time (years)")
+plt.ylabel("Basal area (m² ha$^{-1}$)")
+plt.title("Basal area")
 plt.grid()
 plt.show()
