@@ -26,7 +26,7 @@ def main() -> None:
     p = build_parameters()
     c = build_context()
 
-    results = simulate(x0, p, c, max_steps=10)
+    results = simulate(x0, p, c, max_steps=10, solver_name="sparse")
 
     output_files = save_simulation_results(
         results,

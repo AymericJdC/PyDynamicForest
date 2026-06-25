@@ -558,7 +558,9 @@ def simulate(
     p: Parameters,
     c: SimulationContext,
     max_steps: int | None = None,
+    solver_name: str = "dense",
 ) -> SimulationResults:
+
     """
     Run a simulation from an InitialCondition, Parameters and SimulationContext.
 
@@ -585,6 +587,16 @@ def simulate(
     """
 
     state = build_initial_state(x0, p, c)
+
+    if solver_name == "dense":
+        advance_one_step = advance_one_step_dense_legacy
+    elif solver_name == "sparse":
+        advance_one_step = advance_one_step_sparse_legacy
+    else:
+        raise ValueError(
+            f"Unknown solver_name: {solver_name}. "
+            "Expected 'dense' or 'sparse'."
+        )
 
     n_steps = p.numerics.time.n_steps
 
@@ -615,14 +627,14 @@ def simulate(
     record_state(state)
 
     for _ in range(n_steps):
-        state = advance_one_step_dense_legacy(state, p)
+        state = advance_one_step(state, p)
         record_state(state)
 
     metadata = {
         "n_steps_requested": p.numerics.time.n_steps,
         "n_steps_run": n_steps,
         "dt": p.numerics.time.dt,
-        "solver": "dense_legacy",
+        "solver": f"{solver_name}_legacy",
         "max_steps": max_steps,
     }
 
