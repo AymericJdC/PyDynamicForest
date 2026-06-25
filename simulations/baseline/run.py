@@ -1,33 +1,21 @@
 """
 Run the baseline reduced scenario.
 
-At this stage, this script builds:
+This script builds:
     - x0: InitialCondition
     - p : Parameters
     - c : SimulationContext
-    - state0: initial discretized State
 
-It computes:
-    - forest diagnostics,
-    - numerical derived quantities,
-    - model coefficient fields.
+Then it runs a short refactored simulation using:
+
+    results = simulate(x0, p, c, max_steps=10)
 """
 
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
 
-from pydynamicforest.initial_conditions import build_initial_state
-from pydynamicforest.diagnostics import state_diagnostics
-from pydynamicforest.numerics import (
-    compute_derived_quantities,
-    check_status_field_bounds,
-)
-from pydynamicforest.model import (
-    evaluate_model_fields,
-    check_model_fields_are_finite,
-    check_model_fields_shapes,
-)
+from pydynamicforest.solver import simulate
 
 
 def main() -> None:
@@ -35,61 +23,41 @@ def main() -> None:
     p = build_parameters()
     c = build_context()
 
-    state0 = build_initial_state(x0, p, c)
+    results = simulate(x0, p, c, max_steps=10)
 
-    diagnostics = state_diagnostics(state0, p)
-    derived = compute_derived_quantities(state0, p)
-    fields = evaluate_model_fields(p, state0.time)
-
-    print("Baseline scenario successfully built.")
+    print("Baseline simulation completed.")
     print()
     print("Initial condition:")
-    print(f"  name         = {x0.name}")
-    print(f"  initial_age  = {x0.initial_age}")
-    print(f"  mass_target  = {x0.mass_target}")
+    print(f"  name              = {x0.name}")
+    print(f"  initial_age       = {x0.initial_age}")
+    print(f"  mass_target       = {x0.mass_target}")
     print()
     print("Parameters:")
-    print(f"  name         = {p.name}")
-    print(f"  grid         = {p.numerics.grid.nx} x {p.numerics.grid.ny}")
-    print(f"  time steps   = {p.numerics.time.n_steps}")
-    print(f"  dt           = {p.numerics.time.dt}")
+    print(f"  name              = {p.name}")
+    print(f"  grid              = {p.numerics.grid.nx} x {p.numerics.grid.ny}")
+    print(f"  total time steps  = {p.numerics.time.n_steps}")
+    print(f"  dt                = {p.numerics.time.dt}")
     print()
     print("Context:")
-    print(f"  name         = {c.name}")
-    print(f"  initial_age  = {c.initial_age}")
-    print(f"  final_age    = {c.final_age}")
-    print(f"  snapshots    = {c.output.snapshot_ages}")
+    print(f"  name              = {c.name}")
+    print(f"  initial_age       = {c.initial_age}")
+    print(f"  final_age         = {c.final_age}")
     print()
-    print("Initial state:")
-    print(f"  time         = {state0.time}")
-    print(f"  age          = {state0.age}")
-    print(f"  U shape      = {state0.U.shape}")
+    print("Run metadata:")
+    for key, value in results.metadata.items():
+        print(f"  {key:18s} = {value}")
     print()
-    print("Initial diagnostics:")
-    for key, value in diagnostics.items():
-        print(f"  {key:16s} = {value}")
+    print("Final state after short run:")
+    print(f"  step_index        = {results.final_state.step_index}")
+    print(f"  time              = {results.final_state.time}")
+    print(f"  age               = {results.final_state.age}")
+    print(f"  U shape           = {results.final_state.U.shape}")
     print()
-    print("Derived numerical quantities:")
-    print(f"  cumulative mass J[-1,-1] = {derived.total_mass}")
-    print(f"  minimum density          = {derived.minimum_density}")
-    print(f"  min status               = {derived.status_field.min()}")
-    print(f"  max status               = {derived.status_field.max()}")
-    print(
-        f"  status in [0,1]          = "
-        f"{check_status_field_bounds(derived.status_field)}"
-    )
-    print()
-    print("Model fields:")
-    print(f"  fields finite           = {check_model_fields_are_finite(fields)}")
-    print(
-        f"  fields shapes OK        = "
-        f"{check_model_fields_shapes(fields, state0.U.shape)}"
-    )
-    for name, values in fields.items():
-        print(
-            f"  {name:16s}: "
-            f"min = {values.min()}, max = {values.max()}"
-        )
+    print("Final diagnostics after short run:")
+    print(f"  total_mass        = {results.time_series.total_mass[-1]}")
+    print(f"  minimum_density   = {results.time_series.minimum_density[-1]}")
+    print(f"  top_height        = {results.time_series.top_height[-1]}")
+    print(f"  basal_area        = {results.time_series.basal_area[-1]}")
 
 
 if __name__ == "__main__":

@@ -17,7 +17,22 @@ from pydynamicforest.numerics import (
     compute_derived_quantities,
     flatten_index,
 )
-from pydynamicforest.types import Parameters, State
+from pydynamicforest.types import (
+    InitialCondition,
+    Parameters,
+    SimulationContext,
+    SimulationResults,
+    State,
+    TimeSeries,
+)
+from pydynamicforest.initial_conditions import build_initial_state
+from pydynamicforest.diagnostics import state_diagnostics
+from pydynamicforest.types import (
+    InitialCondition,
+    SimulationContext,
+    SimulationResults,
+    TimeSeries,
+)
 
 
 def compute_transport_legacy(
@@ -332,4 +347,87 @@ def advance_one_step_dense_legacy(
         age=age_next,
         U=U_next,
         step_index=state.step_index + 1,
+    )
+
+def simulate(
+    x0: InitialCondition,
+    p: Parameters,
+    c: SimulationContext,
+    max_steps: int | None = None,
+) -> SimulationResults:
+    """
+    Run a simulation from an InitialCondition, Parameters and SimulationContext.
+
+    This is the central conceptual API:
+
+        results = simulate(x0, p, c)
+
+    Parameters
+    ----------
+    x0:
+        Initial condition.
+    p:
+        Model and numerical parameters.
+    c:
+        Simulation context.
+    max_steps:
+        Optional maximum number of time steps. This is useful during refactoring
+        to run short simulations without executing the full legacy configuration.
+
+    Returns
+    -------
+    SimulationResults
+        Structured simulation output.
+    """
+
+    state = build_initial_state(x0, p, c)
+
+    n_steps = p.numerics.time.n_steps
+    if max_steps is not None:
+        n_steps = min(n_steps, max_steps)
+
+    snapshots: list[State] = []
+    time_series = TimeSeries()
+    diagnostics_messages: list[str] = []
+
+    def record_state(current_state: State) -> None:
+        """
+        Record diagnostics and optionally save the current state.
+        """
+
+        diagnostics = state_diagnostics(current_state, p)
+
+        time_series.times.append(current_state.time)
+        time_series.ages.append(current_state.age)
+        time_series.total_mass.append(diagnostics["total_mass"])
+        time_series.minimum_density.append(diagnostics["minimum_density"])
+        time_series.top_height.append(diagnostics["top_height"])
+        time_series.basal_area.append(diagnostics["basal_area"])
+
+        if c.output.save_full_trajectory:
+            snapshots.append(current_state)
+
+    record_state(state)
+
+    for _ in range(n_steps):
+        state = advance_one_step_dense_legacy(state, p)
+        record_state(state)
+
+    metadata = {
+        "n_steps_requested": p.numerics.time.n_steps,
+        "n_steps_run": n_steps,
+        "dt": p.numerics.time.dt,
+        "solver": "dense_legacy",
+        "max_steps": max_steps,
+    }
+
+    return SimulationResults(
+        initial_condition=x0,
+        parameters=p,
+        context=c,
+        final_state=state,
+        snapshots=snapshots,
+        time_series=time_series,
+        diagnostics=diagnostics_messages,
+        metadata=metadata,
     )
