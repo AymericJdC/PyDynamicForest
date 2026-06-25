@@ -113,8 +113,9 @@ def main() -> None:
         "top_height_final": top_height(U_final, p),
         "basal_area_final": basal_area(U_final, p),
         "final_mass": legacy_mass_formula(U_final, grid.dx, grid.dy),
-        "minimum_U": minimum_density(U_final),
+        "minimum_U": min(results.time_series.minimum_density),
     }
+
 
     print("Reduced reference comparison")
     print("============================")
