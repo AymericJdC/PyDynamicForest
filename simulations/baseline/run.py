@@ -9,6 +9,8 @@ This script builds:
 Then it runs a short refactored simulation using:
 
     results = simulate(x0, p, c, max_steps=10)
+
+and exports structured results to the outputs/ directory.
 """
 
 from simulations.baseline.initial_condition import build_initial_condition
@@ -16,6 +18,7 @@ from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
 
 from pydynamicforest.solver import simulate
+from pydynamicforest.outputs import save_simulation_results
 
 
 def main() -> None:
@@ -24,6 +27,11 @@ def main() -> None:
     c = build_context()
 
     results = simulate(x0, p, c, max_steps=10)
+
+    output_files = save_simulation_results(
+        results,
+        output_dir="outputs/baseline_short",
+    )
 
     print("Baseline simulation completed.")
     print()
@@ -58,6 +66,10 @@ def main() -> None:
     print(f"  minimum_density   = {results.time_series.minimum_density[-1]}")
     print(f"  top_height        = {results.time_series.top_height[-1]}")
     print(f"  basal_area        = {results.time_series.basal_area[-1]}")
+    print()
+    print("Output files:")
+    for name, path in output_files.items():
+        print(f"  {name:18s} = {path}")
 
 
 if __name__ == "__main__":
