@@ -9,7 +9,8 @@ At this stage, this script builds:
 
 It computes:
     - forest diagnostics,
-    - numerical derived quantities.
+    - numerical derived quantities,
+    - model coefficient fields.
 """
 
 from simulations.baseline.initial_condition import build_initial_condition
@@ -22,6 +23,11 @@ from pydynamicforest.numerics import (
     compute_derived_quantities,
     check_status_field_bounds,
 )
+from pydynamicforest.model import (
+    evaluate_model_fields,
+    check_model_fields_are_finite,
+    check_model_fields_shapes,
+)
 
 
 def main() -> None:
@@ -33,6 +39,7 @@ def main() -> None:
 
     diagnostics = state_diagnostics(state0, p)
     derived = compute_derived_quantities(state0, p)
+    fields = evaluate_model_fields(p, state0.time)
 
     print("Baseline scenario successfully built.")
     print()
@@ -71,6 +78,18 @@ def main() -> None:
         f"  status in [0,1]          = "
         f"{check_status_field_bounds(derived.status_field)}"
     )
+    print()
+    print("Model fields:")
+    print(f"  fields finite           = {check_model_fields_are_finite(fields)}")
+    print(
+        f"  fields shapes OK        = "
+        f"{check_model_fields_shapes(fields, state0.U.shape)}"
+    )
+    for name, values in fields.items():
+        print(
+            f"  {name:16s}: "
+            f"min = {values.min()}, max = {values.max()}"
+        )
 
 
 if __name__ == "__main__":
