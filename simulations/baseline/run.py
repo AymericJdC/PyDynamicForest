@@ -7,7 +7,9 @@ At this stage, this script builds:
     - c : SimulationContext
     - state0: initial discretized State
 
-It also computes initial forest diagnostics.
+It computes:
+    - forest diagnostics,
+    - numerical derived quantities.
 """
 
 from simulations.baseline.initial_condition import build_initial_condition
@@ -16,6 +18,10 @@ from simulations.baseline.context import build_context
 
 from pydynamicforest.initial_conditions import build_initial_state
 from pydynamicforest.diagnostics import state_diagnostics
+from pydynamicforest.numerics import (
+    compute_derived_quantities,
+    check_status_field_bounds,
+)
 
 
 def main() -> None:
@@ -24,7 +30,9 @@ def main() -> None:
     c = build_context()
 
     state0 = build_initial_state(x0, p, c)
+
     diagnostics = state_diagnostics(state0, p)
+    derived = compute_derived_quantities(state0, p)
 
     print("Baseline scenario successfully built.")
     print()
@@ -53,6 +61,16 @@ def main() -> None:
     print("Initial diagnostics:")
     for key, value in diagnostics.items():
         print(f"  {key:16s} = {value}")
+    print()
+    print("Derived numerical quantities:")
+    print(f"  cumulative mass J[-1,-1] = {derived.total_mass}")
+    print(f"  minimum density          = {derived.minimum_density}")
+    print(f"  min status               = {derived.status_field.min()}")
+    print(f"  max status               = {derived.status_field.max()}")
+    print(
+        f"  status in [0,1]          = "
+        f"{check_status_field_bounds(derived.status_field)}"
+    )
 
 
 if __name__ == "__main__":
