@@ -6,16 +6,16 @@ At this stage, this script builds:
     - p : Parameters
     - c : SimulationContext
     - state0: initial discretized State
+
+It also computes initial forest diagnostics.
 """
 
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
 
-from pydynamicforest.initial_conditions import (
-    build_initial_state,
-    integrate_2d_trapezoidal,
-)
+from pydynamicforest.initial_conditions import build_initial_state
+from pydynamicforest.diagnostics import state_diagnostics
 
 
 def main() -> None:
@@ -24,9 +24,7 @@ def main() -> None:
     c = build_context()
 
     state0 = build_initial_state(x0, p, c)
-
-    grid = p.numerics.grid
-    initial_mass = integrate_2d_trapezoidal(state0.U, grid.dx, grid.dy)
+    diagnostics = state_diagnostics(state0, p)
 
     print("Baseline scenario successfully built.")
     print()
@@ -51,9 +49,10 @@ def main() -> None:
     print(f"  time         = {state0.time}")
     print(f"  age          = {state0.age}")
     print(f"  U shape      = {state0.U.shape}")
-    print(f"  min(U)       = {state0.U.min()}")
-    print(f"  max(U)       = {state0.U.max()}")
-    print(f"  mass         = {initial_mass}")
+    print()
+    print("Initial diagnostics:")
+    for key, value in diagnostics.items():
+        print(f"  {key:16s} = {value}")
 
 
 if __name__ == "__main__":
