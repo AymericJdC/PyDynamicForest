@@ -3,15 +3,28 @@ Solver routines for PyDynamicForest.
 
 This module contains the time-stepping logic.
 
-At this stage, we implement a dense legacy-like one-step solver:
-    state_next = advance_one_step_dense_legacy(state, p)
+At this stage, two one-step solvers are available:
 
-The purpose is to reproduce the original numerical logic before later
-improving the implementation.
+    state_next = advance_one_step_dense_legacy(state, p)
+    state_next = advance_one_step_sparse_legacy(state, p)
+
+The dense version reproduces the original legacy implementation using
+numpy.linalg.solve.
+
+The sparse version reproduces the same numerical scheme but assembles the
+implicit linear system as a sparse matrix and solves it with scipy.sparse.
+
+The high-level simulation API is:
+
+    results = simulate(x0, p, c, max_steps=...)
 """
 
 import numpy as np
+from scipy.sparse import lil_matrix
+from scipy.sparse.linalg import spsolve
 
+from pydynamicforest.initial_conditions import build_initial_state
+from pydynamicforest.diagnostics import state_diagnostics
 from pydynamicforest.model import evaluate_model_fields
 from pydynamicforest.numerics import (
     compute_derived_quantities,
@@ -23,14 +36,6 @@ from pydynamicforest.types import (
     SimulationContext,
     SimulationResults,
     State,
-    TimeSeries,
-)
-from pydynamicforest.initial_conditions import build_initial_state
-from pydynamicforest.diagnostics import state_diagnostics
-from pydynamicforest.types import (
-    InitialCondition,
-    SimulationContext,
-    SimulationResults,
     TimeSeries,
 )
 
@@ -115,13 +120,21 @@ def compute_transport_legacy(
             if i > 0 and i < nx - 1 and j > 0 and j < ny - 1:
                 transport[i, j] = (
                     (
-                        0.5 * (Ch[i + 1, j] + Ch[i, j]) * upwindx_plus
-                        - 0.5 * (Ch[i, j] + Ch[i - 1, j]) * upwindx_minus
+                        0.5
+                        * (Ch[i + 1, j] + Ch[i, j])
+                        * upwindx_plus
+                        - 0.5
+                        * (Ch[i, j] + Ch[i - 1, j])
+                        * upwindx_minus
                     )
                     / dx
                     + (
-                        0.5 * (Cd[i, j + 1] + Cd[i, j]) * upwindy_plus
-                        - 0.5 * (Cd[i, j] + Cd[i, j - 1]) * upwindy_minus
+                        0.5
+                        * (Cd[i, j + 1] + Cd[i, j])
+                        * upwindy_plus
+                        - 0.5
+                        * (Cd[i, j] + Cd[i, j - 1])
+                        * upwindy_minus
                     )
                     / dy
                 )
@@ -130,12 +143,18 @@ def compute_transport_legacy(
             elif i == 0 and j > 0 and j < ny - 1:
                 transport[i, j] = (
                     (
-                        0.5 * (Ch[i + 1, j] + Ch[i, j]) * upwindx_plus
+                        0.5
+                        * (Ch[i + 1, j] + Ch[i, j])
+                        * upwindx_plus
                     )
                     / dx
                     + (
-                        0.5 * (Cd[i, j + 1] + Cd[i, j]) * upwindy_plus
-                        - 0.5 * (Cd[i, j] + Cd[i, j - 1]) * upwindy_minus
+                        0.5
+                        * (Cd[i, j + 1] + Cd[i, j])
+                        * upwindy_plus
+                        - 0.5
+                        * (Cd[i, j] + Cd[i, j - 1])
+                        * upwindy_minus
                     )
                     / dy
                 )
@@ -144,12 +163,18 @@ def compute_transport_legacy(
             elif i == nx - 1 and j > 0 and j < ny - 1:
                 transport[i, j] = (
                     (
-                        -0.5 * (Ch[i, j] + Ch[i - 1, j]) * upwindx_minus
+                        -0.5
+                        * (Ch[i, j] + Ch[i - 1, j])
+                        * upwindx_minus
                     )
                     / dx
                     + (
-                        0.5 * (Cd[i, j + 1] + Cd[i, j]) * upwindy_plus
-                        - 0.5 * (Cd[i, j] + Cd[i, j - 1]) * upwindy_minus
+                        0.5
+                        * (Cd[i, j + 1] + Cd[i, j])
+                        * upwindy_plus
+                        - 0.5
+                        * (Cd[i, j] + Cd[i, j - 1])
+                        * upwindy_minus
                     )
                     / dy
                 )
@@ -158,12 +183,18 @@ def compute_transport_legacy(
             elif j == 0 and i < nx - 1 and i > 0:
                 transport[i, j] = (
                     (
-                        0.5 * (Ch[i + 1, j] + Ch[i, j]) * upwindx_plus
-                        - 0.5 * (Ch[i, j] + Ch[i - 1, j]) * upwindx_minus
+                        0.5
+                        * (Ch[i + 1, j] + Ch[i, j])
+                        * upwindx_plus
+                        - 0.5
+                        * (Ch[i, j] + Ch[i - 1, j])
+                        * upwindx_minus
                     )
                     / dx
                     + (
-                        0.5 * (Cd[i, j + 1] + Cd[i, j]) * upwindy_plus
+                        0.5
+                        * (Cd[i, j + 1] + Cd[i, j])
+                        * upwindy_plus
                     )
                     / dy
                 )
@@ -172,12 +203,18 @@ def compute_transport_legacy(
             elif j == ny - 1 and i < nx - 1 and i > 0:
                 transport[i, j] = (
                     (
-                        0.5 * (Ch[i + 1, j] + Ch[i, j]) * upwindx_plus
-                        - 0.5 * (Ch[i, j] + Ch[i - 1, j]) * upwindx_minus
+                        0.5
+                        * (Ch[i + 1, j] + Ch[i, j])
+                        * upwindx_plus
+                        - 0.5
+                        * (Ch[i, j] + Ch[i - 1, j])
+                        * upwindx_minus
                     )
                     / dx
                     + (
-                        -0.5 * (Cd[i, j] + Cd[i, j - 1]) * upwindy_minus
+                        -0.5
+                        * (Cd[i, j] + Cd[i, j - 1])
+                        * upwindy_minus
                     )
                     / dy
                 )
@@ -185,29 +222,53 @@ def compute_transport_legacy(
             # Bottom-left corner
             elif i == 0 and j == 0:
                 transport[i, j] = (
-                    0.5 * (Ch[i + 1, j] + Ch[i, j]) * upwindx_plus / dx
-                    + 0.5 * (Cd[i, j + 1] + Cd[i, j]) * upwindy_plus / dy
+                    0.5
+                    * (Ch[i + 1, j] + Ch[i, j])
+                    * upwindx_plus
+                    / dx
+                    + 0.5
+                    * (Cd[i, j + 1] + Cd[i, j])
+                    * upwindy_plus
+                    / dy
                 )
 
             # Top-left corner
             elif i == 0 and j == ny - 1:
                 transport[i, j] = (
-                    0.5 * (Ch[i + 1, j] + Ch[i, j]) * upwindx_plus / dx
-                    - 0.5 * (Cd[i, j] + Cd[i, j - 1]) * upwindy_minus / dy
+                    0.5
+                    * (Ch[i + 1, j] + Ch[i, j])
+                    * upwindx_plus
+                    / dx
+                    - 0.5
+                    * (Cd[i, j] + Cd[i, j - 1])
+                    * upwindy_minus
+                    / dy
                 )
 
             # Bottom-right corner
             elif i == nx - 1 and j == 0:
                 transport[i, j] = (
-                    -0.5 * (Ch[i, j] + Ch[i - 1, j]) * upwindx_minus / dx
-                    + 0.5 * (Cd[i, j + 1] + Cd[i, j]) * upwindy_plus / dy
+                    -0.5
+                    * (Ch[i, j] + Ch[i - 1, j])
+                    * upwindx_minus
+                    / dx
+                    + 0.5
+                    * (Cd[i, j + 1] + Cd[i, j])
+                    * upwindy_plus
+                    / dy
                 )
 
             # Top-right corner
             elif i == nx - 1 and j == ny - 1:
                 transport[i, j] = (
-                    -0.5 * (Ch[i, j] + Ch[i - 1, j]) * upwindx_minus / dx
-                    - 0.5 * (Cd[i, j] + Cd[i, j - 1]) * upwindy_minus / dy
+                    -0.5
+                    * (Ch[i, j] + Ch[i - 1, j])
+                    * upwindx_minus
+                    / dx
+                    - 0.5
+                    * (Cd[i, j] + Cd[i, j - 1])
+                    * upwindy_minus
+                    / dy
                 )
 
     return transport
@@ -272,7 +333,6 @@ def assemble_dense_legacy_system(
             aP = aE + aW + aN + aS
 
             row = flatten_index(i, j, ny)
-
             Sij = S[i, j]
 
             A[row, row] = (
@@ -298,6 +358,95 @@ def assemble_dense_legacy_system(
     return A, b
 
 
+def assemble_sparse_legacy_system(
+    state: State,
+    p: Parameters,
+    derived,
+    fields_next: dict[str, np.ndarray],
+    transport: np.ndarray,
+):
+    """
+    Assemble the sparse linear system A U^{n+1} = b.
+
+    This reproduces the same implicit diffusion-reaction system as
+    assemble_dense_legacy_system, but stores A as a sparse matrix.
+
+    The matrix structure is local:
+        - diagonal point,
+        - east/west neighbours,
+        - north/south neighbours.
+    """
+
+    U = state.U
+    S = derived.status_field
+
+    grid = p.numerics.grid
+    time = p.numerics.time
+
+    nx = grid.nx
+    ny = grid.ny
+    dx = grid.dx
+    dy = grid.dy
+    dt = time.dt
+
+    diffusion = fields_next["diffusion"]
+    mortality = fields_next["mortality"]
+
+    n_unknowns = nx * ny
+
+    A = lil_matrix((n_unknowns, n_unknowns), dtype=float)
+    b = np.zeros(n_unknowns, dtype=float)
+
+    for i in range(nx):
+        for j in range(ny):
+            if i < nx - 1:
+                aE = 0.5 * (diffusion[i, j] + diffusion[i + 1, j]) / (dx * dx)
+            else:
+                aE = 0.0
+
+            if i > 0:
+                aW = 0.5 * (diffusion[i, j] + diffusion[i - 1, j]) / (dx * dx)
+            else:
+                aW = 0.0
+
+            if j < ny - 1:
+                aN = 0.5 * (diffusion[i, j] + diffusion[i, j + 1]) / (dy * dy)
+            else:
+                aN = 0.0
+
+            if j > 0:
+                aS = 0.5 * (diffusion[i, j] + diffusion[i, j - 1]) / (dy * dy)
+            else:
+                aS = 0.0
+
+            aP = aE + aW + aN + aS
+
+            row = flatten_index(i, j, ny)
+            Sij = S[i, j]
+
+            A[row, row] = (
+                1.0
+                + dt * aP
+                + dt * mortality[i, j] * (1.0 - Sij)
+            )
+
+            if i < nx - 1:
+                A[row, flatten_index(i + 1, j, ny)] = -dt * aE
+
+            if i > 0:
+                A[row, flatten_index(i - 1, j, ny)] = -dt * aW
+
+            if j < ny - 1:
+                A[row, flatten_index(i, j + 1, ny)] = -dt * aN
+
+            if j > 0:
+                A[row, flatten_index(i, j - 1, ny)] = -dt * aS
+
+            b[row] = U[i, j] - dt * transport[i, j]
+
+    return A.tocsr(), b
+
+
 def advance_one_step_dense_legacy(
     state: State,
     p: Parameters,
@@ -306,7 +455,7 @@ def advance_one_step_dense_legacy(
     Advance the model by one time step using the dense legacy scheme.
 
     This function intentionally keeps the legacy dense linear algebra
-    approach. It will later be replaced or complemented by a sparse solver.
+    approach. It is useful as a regression reference.
     """
 
     time = p.numerics.time
@@ -349,6 +498,61 @@ def advance_one_step_dense_legacy(
         step_index=state.step_index + 1,
     )
 
+
+def advance_one_step_sparse_legacy(
+    state: State,
+    p: Parameters,
+) -> State:
+    """
+    Advance the model by one time step using a sparse version of the
+    legacy scheme.
+
+    The numerical scheme is intended to be equivalent to
+    advance_one_step_dense_legacy, but the implicit linear system is
+    assembled and solved using sparse linear algebra.
+    """
+
+    time = p.numerics.time
+    dt = time.dt
+
+    t_current = state.time
+    t_next = t_current + dt
+
+    derived = compute_derived_quantities(state, p)
+
+    fields_current = evaluate_model_fields(p, t_current)
+    fields_next = evaluate_model_fields(p, t_next)
+
+    transport = compute_transport_legacy(
+        state=state,
+        p=p,
+        derived=derived,
+        fields=fields_current,
+    )
+
+    A, b = assemble_sparse_legacy_system(
+        state=state,
+        p=p,
+        derived=derived,
+        fields_next=fields_next,
+        transport=transport,
+    )
+
+    U_next_flat = spsolve(A, b)
+
+    grid = p.numerics.grid
+    U_next = U_next_flat.reshape((grid.nx, grid.ny))
+
+    age_next = state.age + dt
+
+    return State(
+        time=t_next,
+        age=age_next,
+        U=U_next,
+        step_index=state.step_index + 1,
+    )
+
+
 def simulate(
     x0: InitialCondition,
     p: Parameters,
@@ -383,6 +587,7 @@ def simulate(
     state = build_initial_state(x0, p, c)
 
     n_steps = p.numerics.time.n_steps
+
     if max_steps is not None:
         n_steps = min(n_steps, max_steps)
 
