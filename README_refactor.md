@@ -74,6 +74,7 @@ A baseline reduced scenario has been introduced in:
 
 ```text
 simulations/baseline/
+├── __init__.py
 ├── initial_condition.py
 ├── parameters.py
 ├── context.py
@@ -88,10 +89,16 @@ p = build_parameters()
 c = build_context()
 ```
 
-and runs a short simulation using:
+and runs a short sparse simulation using:
 
 ```python
-results = simulate(x0, p, c, max_steps=10)
+results = simulate(
+    x0,
+    p,
+    c,
+    max_steps=10,
+    solver_name="sparse",
+)
 ```
 
 ## Legacy reference
@@ -108,7 +115,13 @@ A reduced reference case has also been created:
 legacy/DynamicForestModel_2D_reduced_reference.py
 ```
 
-The reduced reference case is used for fast regression checks during refactoring.
+A short reference case has been created for fast regression checks:
+
+```text
+legacy/DynamicForestModel_2D_short_reference.py
+```
+
+The reduced and short reference cases are used to compare the refactored implementation against the original legacy numerical behavior.
 
 ## Current status
 
@@ -155,8 +168,26 @@ The following components have been implemented.
 `pydynamicforest/solver.py`
 
 - implements a dense legacy-like one-step solver;
-- implements a short simulation loop;
+- implements a sparse legacy-like one-step solver;
+- implements a structured simulation loop;
 - returns structured `SimulationResults`.
+
+The high-level simulation API is:
+
+```python
+results = simulate(
+    x0,
+    p,
+    c,
+    max_steps=None,
+    solver_name="sparse",
+)
+```
+
+Available solver names are currently:
+
+- `"dense"`: dense legacy-like solver using `numpy.linalg.solve`;
+- `"sparse"`: sparse legacy-like solver using `scipy.sparse`.
 
 ### Outputs
 
@@ -166,9 +197,37 @@ The following components have been implemented.
 - exports metadata to JSON;
 - exports a human-readable summary.
 
+## Sparse solver validation
+
+A sparse version of the legacy one-step solver has been implemented.
+
+It has been validated against:
+
+1. the dense refactored one-step solver;
+2. the dense refactored short simulation;
+3. the reduced legacy full reference case.
+
+For the reduced reference case:
+
+```text
+Nx = 20
+Ny = 20
+Nt = 1000
+solver = sparse
+```
+
+The sparse solver reproduces the reduced legacy reference up to numerical precision for the main scalar outputs:
+
+- final top height;
+- final basal area;
+- final legacy mass;
+- minimum density over the trajectory.
+
+The reduced sparse case currently runs in approximately 9 seconds on the working machine.
+
 ## Important limitation
 
-The current solver still uses the dense legacy linear algebra strategy:
+The dense solver still uses the dense legacy linear algebra strategy:
 
 ```python
 np.linalg.solve(A, b)
@@ -176,9 +235,7 @@ np.linalg.solve(A, b)
 
 This reproduces the original implementation but is computationally expensive.
 
-The full legacy configuration is therefore not suitable as a daily regression test.
-
-The next numerical improvement will be to replace the dense assembly and solve by a sparse implementation.
+The sparse solver should now be preferred for practical simulations, while the dense solver remains useful as a regression reference on small cases.
 
 ## Tests
 
@@ -188,9 +245,12 @@ The current test suite checks:
 - diagnostics;
 - model field evaluation;
 - derived numerical quantities;
-- one-step solver;
+- dense one-step solver;
+- sparse one-step solver;
 - short simulation loop;
-- structured exports.
+- sparse simulation against dense simulation;
+- structured exports;
+- short legacy reference regression.
 
 Tests can be run with:
 
@@ -198,15 +258,142 @@ Tests can be run with:
 C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests
 ```
 
+## Scripts
+
+The following scripts are currently available.
+
+### Short baseline run
+
+```bat
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
+```
+
+This runs a short baseline simulation using the sparse solver, typically with:
+
+```python
+max_steps=10
+solver_name="sparse"
+```
+
+### Full reduced sparse run
+
+```bat
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
+```
+
+This runs the full reduced baseline case:
+
+```text
+Nx = 20
+Ny = 20
+Nt = 1000
+solver = sparse
+```
+
+and exports results to:
+
+```text
+outputs/baseline_reduced_sparse/
+```
+
+### Reduced reference comparison
+
+```bat
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
+```
+
+This compares the refactored sparse solver against:
+
+```text
+reference_outputs/legacy_reduced_console_output.txt
+```
+
+The comparison currently checks:
+
+- final top height;
+- final basal area;
+- final legacy mass;
+- minimum density over the trajectory.
+
+## Environment and reproducibility
+
+The Python dependencies are documented in two files:
+
+```text
+requirements.txt
+environment.yml
+```
+
+The conda environment can be recreated with:
+
+```bat
+conda env create -f environment.yml
+conda activate pydynamicforest
+```
+
+The package currently depends on:
+
+- numpy
+- scipy
+- matplotlib
+- pytest
+
+## Useful commands
+
+Run the full test suite:
+
+```bat
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests
+```
+
+Run the short baseline scenario:
+
+```bat
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
+```
+
+Run the full reduced sparse baseline:
+
+```bat
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
+```
+
+Compare the sparse refactored solver with the reduced legacy reference:
+
+```bat
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
+```
+
+## Current validation status
+
+The sparse solver reproduces the reduced legacy reference case up to numerical precision for the main scalar outputs:
+
+- final top height;
+- final basal area;
+- final legacy mass;
+- minimum density over the trajectory.
+
+For the reduced reference case, the observed discrepancies are at or near machine precision.
+
 ## Next steps
 
 Recommended next steps:
 
-1. Compare the refactored short simulation with the reduced legacy reference.
-2. Add explicit regression tests on selected scalar outputs.
-3. Improve the output of the reduced legacy case for easier comparison.
-4. Introduce a sparse matrix assembly and sparse linear solver.
-5. Reduce unnecessary memory storage.
-6. Harmonize quadrature rules across all diagnostics.
-7. Replace hard-coded age or time indices by explicit age mapping utilities.
-8. Add documentation to the main README.
+1. Add a pytest marker for long or slow tests.
+2. Decide whether the reduced full sparse comparison should remain a manual script or become an optional regression test.
+3. Improve snapshot management using `OutputSpecification.snapshot_ages`.
+4. Avoid storing the full trajectory by default when only selected snapshots are needed.
+5. Harmonize quadrature rules across diagnostics.
+6. Clarify the distinction between:
+   - legacy mass;
+   - trapezoidal mass;
+   - scientific diagnostic mass.
+7. Make `sparse` the default solver for practical simulations.
+8. Keep the dense solver available for regression checks on small cases.
+9. Add more user-facing documentation to the main `README.md`.
+10. Prepare future scientific extensions:
+    - recruitment;
+    - alternative mortality laws;
+    - alternative growth functions;
+    - alternative status definitions;
+    - silvicultural or environmental scenarios.
