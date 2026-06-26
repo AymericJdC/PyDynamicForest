@@ -16,7 +16,7 @@ implicit linear system as a sparse matrix and solves it with scipy.sparse.
 
 The high-level simulation API is:
 
-    results = simulate(x0, p, c, max_steps=...)
+    results = simulate(x0, p, c, max_steps=..., solver_name=...)
 """
 
 import numpy as np
@@ -80,7 +80,7 @@ def compute_transport_legacy(
             upwindy_plus = 0.0
             upwindy_minus = 0.0
 
-            # Right face in x direction
+            # Right face in x direction.
             if i < nx - 1:
                 condx_plus = Ch[i, j] + Ch[i + 1, j]
 
@@ -89,7 +89,7 @@ def compute_transport_legacy(
                 else:
                     upwindx_plus = (J[i + 1, j] / den) * U[i + 1, j]
 
-            # Left face in x direction
+            # Left face in x direction.
             if i > 0:
                 condx_minus = Ch[i, j] + Ch[i - 1, j]
 
@@ -98,7 +98,7 @@ def compute_transport_legacy(
                 else:
                     upwindx_minus = Sij * U[i, j]
 
-            # Upper face in y direction
+            # Upper face in y direction.
             if j < ny - 1:
                 condy_plus = Cd[i, j] + Cd[i, j + 1]
 
@@ -107,7 +107,7 @@ def compute_transport_legacy(
                 else:
                     upwindy_plus = (J[i, j + 1] / den) * U[i, j + 1]
 
-            # Lower face in y direction
+            # Lower face in y direction.
             if j > 0:
                 condy_minus = Cd[i, j] + Cd[i, j - 1]
 
@@ -116,7 +116,7 @@ def compute_transport_legacy(
                 else:
                     upwindy_minus = Sij * U[i, j]
 
-            # Interior points
+            # Interior points.
             if i > 0 and i < nx - 1 and j > 0 and j < ny - 1:
                 transport[i, j] = (
                     (
@@ -139,7 +139,7 @@ def compute_transport_legacy(
                     / dy
                 )
 
-            # Left boundary
+            # Left boundary.
             elif i == 0 and j > 0 and j < ny - 1:
                 transport[i, j] = (
                     (
@@ -159,7 +159,7 @@ def compute_transport_legacy(
                     / dy
                 )
 
-            # Right boundary
+            # Right boundary.
             elif i == nx - 1 and j > 0 and j < ny - 1:
                 transport[i, j] = (
                     (
@@ -179,7 +179,7 @@ def compute_transport_legacy(
                     / dy
                 )
 
-            # Bottom boundary
+            # Bottom boundary.
             elif j == 0 and i < nx - 1 and i > 0:
                 transport[i, j] = (
                     (
@@ -199,7 +199,7 @@ def compute_transport_legacy(
                     / dy
                 )
 
-            # Top boundary
+            # Top boundary.
             elif j == ny - 1 and i < nx - 1 and i > 0:
                 transport[i, j] = (
                     (
@@ -219,7 +219,7 @@ def compute_transport_legacy(
                     / dy
                 )
 
-            # Bottom-left corner
+            # Bottom-left corner.
             elif i == 0 and j == 0:
                 transport[i, j] = (
                     0.5
@@ -232,7 +232,7 @@ def compute_transport_legacy(
                     / dy
                 )
 
-            # Top-left corner
+            # Top-left corner.
             elif i == 0 and j == ny - 1:
                 transport[i, j] = (
                     0.5
@@ -245,7 +245,7 @@ def compute_transport_legacy(
                     / dy
                 )
 
-            # Bottom-right corner
+            # Bottom-right corner.
             elif i == nx - 1 and j == 0:
                 transport[i, j] = (
                     -0.5
@@ -258,7 +258,7 @@ def compute_transport_legacy(
                     / dy
                 )
 
-            # Top-right corner
+            # Top-right corner.
             elif i == nx - 1 and j == ny - 1:
                 transport[i, j] = (
                     -0.5
@@ -284,8 +284,8 @@ def assemble_dense_legacy_system(
     """
     Assemble the dense linear system A U^{n+1} = b.
 
-    This reproduces the legacy implicit diffusion-reaction system with
-    explicit transport.
+    This reproduces the legacy implicit diffusion-reaction system
+    with explicit transport.
     """
 
     U = state.U
@@ -370,11 +370,6 @@ def assemble_sparse_legacy_system(
 
     This reproduces the same implicit diffusion-reaction system as
     assemble_dense_legacy_system, but stores A as a sparse matrix.
-
-    The matrix structure is local:
-        - diagonal point,
-        - east/west neighbours,
-        - north/south neighbours.
     """
 
     U = state.U
@@ -458,8 +453,7 @@ def advance_one_step_dense_legacy(
     approach. It is useful as a regression reference.
     """
 
-    time = p.numerics.time
-    dt = time.dt
+    dt = p.numerics.time.dt
 
     t_current = state.time
     t_next = t_current + dt
@@ -512,8 +506,7 @@ def advance_one_step_sparse_legacy(
     assembled and solved using sparse linear algebra.
     """
 
-    time = p.numerics.time
-    dt = time.dt
+    dt = p.numerics.time.dt
 
     t_current = state.time
     t_next = t_current + dt
@@ -553,6 +546,30 @@ def advance_one_step_sparse_legacy(
     )
 
 
+def should_save_snapshot(
+    state: State,
+    c: SimulationContext,
+    age_tolerance: float,
+) -> bool:
+    """
+    Decide whether a State should be saved as a snapshot.
+
+    A snapshot is saved if the state age is close to one of the requested
+    snapshot ages defined in c.output.snapshot_ages.
+
+    This avoids hard-coded time indices and allows users to reason in terms
+    of stand age.
+    """
+
+    if not c.output.snapshot_ages:
+        return False
+
+    return any(
+        abs(state.age - requested_age) <= age_tolerance
+        for requested_age in c.output.snapshot_ages
+    )
+
+
 def simulate(
     x0: InitialCondition,
     p: Parameters,
@@ -560,7 +577,6 @@ def simulate(
     max_steps: int | None = None,
     solver_name: str = "dense",
 ) -> SimulationResults:
-
     """
     Run a simulation from an InitialCondition, Parameters and SimulationContext.
 
@@ -579,6 +595,10 @@ def simulate(
     max_steps:
         Optional maximum number of time steps. This is useful during refactoring
         to run short simulations without executing the full legacy configuration.
+    solver_name:
+        Name of the one-step solver to use:
+            - "dense"
+            - "sparse"
 
     Returns
     -------
@@ -621,7 +641,13 @@ def simulate(
         time_series.top_height.append(diagnostics["top_height"])
         time_series.basal_area.append(diagnostics["basal_area"])
 
-        if c.output.save_full_trajectory:
+        age_tolerance = 0.5 * p.numerics.time.dt
+
+        if c.output.save_full_trajectory or should_save_snapshot(
+            current_state,
+            c,
+            age_tolerance=age_tolerance,
+        ):
             snapshots.append(current_state)
 
     record_state(state)
