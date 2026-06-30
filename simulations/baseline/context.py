@@ -12,11 +12,18 @@ from pydynamicforest.types import OutputSpecification, SimulationContext
 def build_context() -> SimulationContext:
     """
     Build the baseline simulation context.
+
+    The baseline context requests snapshots at biologically meaningful
+    stand ages rather than at hard-coded numerical indices.
+
+    With save_full_trajectory=False, only the requested snapshots are stored
+    in results.snapshots, while time series diagnostics are still computed
+    at every time step.
     """
 
     output = OutputSpecification(
         snapshot_ages=[18.0, 45.0, 69.0],
-        save_full_trajectory=True,
+        save_full_trajectory=False,
         compute_time_series=True,
         save_figures=False,
         save_tables=False,
@@ -29,6 +36,7 @@ def build_context() -> SimulationContext:
         output=output,
         description=(
             "Baseline context corresponding to a simulation from stand age "
-            "18 to stand age 69, matching the reduced legacy reference case."
+            "18 to stand age 69, matching the reduced legacy reference case. "
+            "Only snapshots at ages 18, 45 and 69 are stored."
         ),
     )

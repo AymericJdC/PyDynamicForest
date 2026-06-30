@@ -49,6 +49,18 @@ def main() -> None:
     print(f"  top_height        = {results.time_series.top_height[-1]}")
     print(f"  basal_area        = {results.time_series.basal_area[-1]}")
     print()
+    print("Saved snapshots:")
+    print(f"  number of snapshots = {len(results.snapshots)}")
+
+    for snapshot in results.snapshots:
+        print(
+            f"  step={snapshot.step_index:4d}, "
+            f"time={snapshot.time:.6f}, "
+            f"age={snapshot.age:.6f}, "
+            f"shape={snapshot.U.shape}"
+        )
+
+    print()
     print("Output files:")
     for name, path in output_files.items():
         print(f"  {name:18s} = {path}")
