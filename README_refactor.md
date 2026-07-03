@@ -282,6 +282,26 @@ This avoids hard-coded numerical indices such as:
 and makes output selection closer to the scientific interpretation of the simulation.
 
 ---
+## Observation exports
+
+Selected observations are exported as `.npz` files under:
+
+    outputs/<run_name>/observations/
+
+Each observation corresponds to a simulated model state selected at a requested stand age.
+
+Each `.npz` file contains:
+
+- `U`: simulated density field;
+- `time`: simulation time;
+- `age`: stand age;
+- `step_index`: numerical time-step index;
+- `height_grid`: normalized height grid;
+- `dbh_grid`: normalized DBH grid;
+- `height_grid_physical`: height grid in physical units;
+- `dbh_grid_physical`: DBH grid in physical units.
+
+The normalized grids are useful for numerical consistency, while the physical grids are useful for biological interpretation and plotting.
 
 ## Mass conventions
 

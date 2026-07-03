@@ -89,8 +89,23 @@ def test_save_simulation_results_exports_observations_npz(tmp_path):
         assert "step_index" in data
         assert "height_grid" in data
         assert "dbh_grid" in data
+        assert "height_grid_physical" in data
+        assert "dbh_grid_physical" in data
 
         assert data["U"].shape == observation.U.shape
         assert np.isclose(float(data["time"]), observation.time)
         assert np.isclose(float(data["age"]), observation.age)
         assert int(data["step_index"]) == observation.step_index
+        
+        assert data["height_grid"].shape == data["height_grid_physical"].shape
+        assert data["dbh_grid"].shape == data["dbh_grid_physical"].shape
+        
+        assert np.allclose(
+            data["height_grid_physical"],
+            data["height_grid"] * p.model.physical_scales.height_scale,
+        )
+
+        assert np.allclose(
+            data["dbh_grid_physical"],
+            data["dbh_grid"] * p.model.physical_scales.dbh_scale,
+        )

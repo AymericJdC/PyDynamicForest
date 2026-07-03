@@ -278,8 +278,14 @@ def save_observations_npz(
 
     files: list[Path] = []
 
-    height_grid = results.parameters.numerics.grid.x
-    dbh_grid = results.parameters.numerics.grid.y
+    grid = results.parameters.numerics.grid
+    scales = results.parameters.model.physical_scales
+
+    height_grid = grid.x
+    dbh_grid = grid.y
+
+    height_grid_physical = height_grid * scales.height_scale
+    dbh_grid_physical = dbh_grid * scales.dbh_scale
 
     for observation in results.observations:
         filename = (
@@ -297,6 +303,8 @@ def save_observations_npz(
             step_index=observation.step_index,
             height_grid=height_grid,
             dbh_grid=dbh_grid,
+            height_grid_physical=height_grid_physical,
+            dbh_grid_physical=dbh_grid_physical,
         )
 
         files.append(file_path)

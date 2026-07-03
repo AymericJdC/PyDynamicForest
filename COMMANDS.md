@@ -222,7 +222,25 @@ outputs/baseline_reduced_sparse/
 ├── metadata.json
 └── summary.txt
 ```
+### Observation files
 
+Selected model observations are exported as `.npz` files under:
+
+    outputs/<run_name>/observations/
+
+Example after running the reduced sparse baseline:
+
+    outputs/baseline_reduced_sparse/observations/
+
+Each observation file can be loaded in Python with:
+
+    import numpy as np
+
+    data = np.load("path/to/observation_file.npz")
+    U = data["U"]
+    age = data["age"]
+    height_grid_physical = data["height_grid_physical"]
+    dbh_grid_physical = data["dbh_grid_physical"]
 ---
 
 ## 9. Development notes

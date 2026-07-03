@@ -88,6 +88,25 @@ A typical output directory contains:
     metadata.json
     summary.txt
 
+## Observation exports
+
+Selected model observations are exported as `.npz` files under:
+
+    outputs/<run_name>/observations/
+
+Each observation file currently contains:
+
+- `U`: simulated density field;
+- `time`: simulation time;
+- `age`: stand age;
+- `step_index`: numerical time-step index;
+- `height_grid`: normalized height grid;
+- `dbh_grid`: normalized DBH grid;
+- `height_grid_physical`: height grid in physical units;
+- `dbh_grid_physical`: DBH grid in physical units.
+
+These files allow post-processing, plotting and comparison of selected model states without rerunning the simulation.
+
 ## Command reference
 
 A full command reference is available in:
