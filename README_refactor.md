@@ -424,6 +424,28 @@ The standard diagnostic figures are:
 - top height;
 - basal area.
 
+## End-to-end CLI workflow test
+
+An end-to-end command-line workflow test has been added.
+
+It verifies the complete user-facing workflow:
+
+1. run a short configurable baseline simulation;
+2. export time series, metadata, summary and observations;
+3. plot individual observations;
+4. plot observation comparison figures;
+5. plot diagnostic time series.
+
+The test is marked as both `slow` and `e2e`.
+
+It can be run with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_end_to_end_cli.py -m e2e
+
+or together with other slow tests:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
+
 ## Mass conventions
 
 The refactor now distinguishes several mass conventions.
@@ -479,6 +501,7 @@ Other current limitations include:
 
 - quadrature conventions are clearer but still need further scientific review;
 - legacy and diagnostic masses coexist for comparison purposes;
+- plotting is functional but still provisional in terms of figure quality;
 - recruitment is not yet implemented;
 - alternative mortality laws are not yet implemented;
 - alternative growth and status definitions remain to be explored;
@@ -503,6 +526,7 @@ The current test suite checks:
 - observation export and loading;
 - plotting utilities;
 - automatic solver selection from numerical parameters;
+- end-to-end command-line workflow;
 - short legacy reference regression.
 
 Tests can be run with:

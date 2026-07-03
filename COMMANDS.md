@@ -61,6 +61,25 @@ By default, slow tests are excluded through `pytest.ini`.
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
 
+### Run the end-to-end CLI workflow test
+
+The end-to-end test checks the complete command-line workflow:
+
+- baseline simulation;
+- result exports;
+- observation exports;
+- individual observation plots;
+- observation comparison plots;
+- diagnostic time-series plots.
+
+Run it with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_end_to_end_cli.py -m e2e
+
+or together with other slow tests:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
+
 ### Run all tests, including slow tests
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "slow or not slow"
@@ -79,25 +98,25 @@ By default, slow tests are excluded through `pytest.ini`.
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
 
-This runs a short sparse simulation, typically with:
+This runs a short sparse simulation using the solver selected from numerical parameters.
 
-    max_steps=10
-    solver_name="sparse"
+### Run a configurable short baseline simulation
 
-### Run the full reduced sparse baseline
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+### Run the full reduced baseline
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+### Override the solver explicitly
+
+For debugging or regression checks:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
+
+### Run the older explicit reduced sparse baseline script
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
-
-This runs the reduced baseline case:
-
-    Nx = 20
-    Ny = 20
-    Nt = 1000
-    solver = sparse
-
-Outputs are written to:
-
-    outputs/baseline_reduced_sparse/
 
 ## 5. Legacy references
 
@@ -187,7 +206,31 @@ The input and output directories can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse --figures-dir outputs\baseline_reduced_sparse\figures
 
-## 9. Plotting diagnostic time series
+## 9. Plotting observation comparisons
+
+After exporting observations, comparison figures across stand ages can be generated with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons
+
+This command reads observations from:
+
+    outputs/baseline_reduced_sparse/observations/
+
+and writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/comparisons/
+
+The script generates:
+
+- height distribution comparisons;
+- DBH distribution comparisons;
+- density field comparisons.
+
+The input and output directories can also be specified explicitly:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse --figures-dir outputs\baseline_reduced_sparse\figures\comparisons
+
+## 10. Plotting diagnostic time series
 
 After running a simulation that exports `time_series.csv`, diagnostic figures can be generated without rerunning the model.
 
@@ -219,7 +262,7 @@ The input file and output directory can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv --figures-dir outputs\baseline_reduced_sparse\figures\time_series
 
-## 10. Syntax checks
+## 11. Syntax checks
 
 ### Compile a single Python file
 
@@ -229,7 +272,7 @@ The input file and output directory can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m compileall pydynamicforest
 
-## 11. Outputs
+## 12. Outputs
 
 Simulation outputs are currently written under:
 
@@ -246,13 +289,14 @@ Example:
     ├── observations/
     └── figures/
         ├── observation_step_.../
+        ├── comparisons/
         └── time_series/
 
-## 12. Development notes
+## 13. Development notes
 
 ### Main conceptual API
 
-    results = simulate(x0, p, c, solver_name="sparse")
+    results = simulate(x0, p, c)
 
 where:
 
@@ -261,14 +305,30 @@ where:
 - `c` is a `SimulationContext`;
 - `results` is a `SimulationResults` object.
 
-### Current solvers
+### Solver selection
 
-    solver_name="dense"
-    solver_name="sparse"
+The recommended simulation call is:
 
-The dense solver is kept as a regression reference.
+    results = simulate(x0, p, c)
 
-The sparse solver is preferred for practical simulations.
+By default, the solver is selected from:
+
+    p.numerics.matrix_storage
+
+Currently supported values are:
+
+    matrix_storage="dense"
+    matrix_storage="sparse"
+
+The baseline reduced scenario is configured to use:
+
+    matrix_storage="sparse"
+    linear_solver="scipy.sparse.linalg.spsolve"
+
+For regression tests or debugging, the solver can still be overridden explicitly:
+
+    results = simulate(x0, p, c, solver_name="dense")
+    results = simulate(x0, p, c, solver_name="sparse")
 
 ### Observation management
 
@@ -283,7 +343,7 @@ When `save_full_trajectory` is `False`, only states close to the requested stand
 
 In this codebase, observations are simulated model states selected for analysis. They should not be confused with empirical field observations.
 
-## 13. Common troubleshooting
+## 14. Common troubleshooting
 
 ### Python points to the wrong executable
 
@@ -300,11 +360,11 @@ If needed, use the explicit interpreter:
 
 Run scripts as modules from the repository root:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline
 
 rather than:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe scripts\run_baseline_reduced_sparse.py
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe scripts\run_baseline.py
 
 ### Windows encoding issue in redirected legacy outputs
 
@@ -316,7 +376,7 @@ Plotting uses the non-interactive `Agg` backend in `pydynamicforest/plotting.py`
 
 This avoids errors related to missing Tk libraries when generating figures in tests or batch runs.
 
-## 14. Recommended daily workflow
+## 15. Recommended daily workflow
 
 A typical development cycle is:
 
@@ -331,3 +391,7 @@ For deeper validation, run:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
+
+For end-to-end CLI validation, run:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_end_to_end_cli.py -m e2e

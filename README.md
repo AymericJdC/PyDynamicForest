@@ -57,6 +57,10 @@ Run slow tests with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
 
+Run the end-to-end CLI workflow test with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_end_to_end_cli.py -m e2e
+
 Run all tests, including slow tests, with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "slow or not slow"
@@ -118,6 +122,7 @@ A typical output directory contains:
     observations/
     figures/
         observation_step_.../
+        comparisons/
         time_series/
 
 The `observations/` directory contains exported `.npz` files for selected model observations.
@@ -152,6 +157,26 @@ For each observation, the script currently generates:
 - a 2D density field;
 - a height distribution;
 - a DBH distribution.
+
+## Plotting observation comparisons
+
+After exporting observations, comparison figures across stand ages can be generated with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons
+
+This command reads exported observations from:
+
+    outputs/baseline_reduced_sparse/observations/
+
+and writes comparison figures to:
+
+    outputs/baseline_reduced_sparse/figures/comparisons/
+
+The script currently generates:
+
+- height distribution comparisons;
+- DBH distribution comparisons;
+- density field comparisons.
 
 ## Plotting diagnostic time series
 
@@ -208,6 +233,8 @@ The sparse solver is preferred for practical runs.
 The distinction between legacy mass, trapezoidal mass, and scientific diagnostic mass has been clarified in the code, but the scientific interpretation of these conventions still needs to be reviewed.
 
 Quadrature conventions should continue to be harmonized across diagnostics.
+
+The current plotting workflow is functional but still provisional. A future visualization-quality improvement step is planned.
 
 Future scientific extensions such as recruitment, alternative mortality laws, alternative growth functions and alternative status definitions remain to be implemented.
 
