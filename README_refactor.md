@@ -1,4 +1,3 @@
-
 # PyDynamicForest refactor notes
 
 ## Purpose
@@ -180,6 +179,33 @@ The script also allows an explicit solver override for debugging or regression c
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
 
 By default, the solver is selected from the numerical parameters.
+
+## Packaging
+
+A minimal `pyproject.toml` file has been added.
+
+The project can now be installed in editable mode with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e .
+
+or with development dependencies:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e ".[dev]"
+
+The current packaging configuration includes:
+
+- `pydynamicforest`;
+- `simulations`;
+- `scripts`.
+
+This keeps the existing command-line workflow based on `python -m scripts...` functional after editable installation.
+
+Future packaging work may introduce console entry points such as:
+
+    pydf-run-baseline
+    pydf-plot-observations
+    pydf-plot-observation-comparisons
+    pydf-plot-diagnostics
 
 ## Legacy reference
 
@@ -566,6 +592,7 @@ The current test suite checks:
 - plotting utilities;
 - automatic solver selection from numerical parameters;
 - centralized baseline scenario configuration;
+- editable packaging;
 - end-to-end command-line workflow;
 - short legacy reference regression.
 
@@ -635,13 +662,14 @@ Recommended next steps:
 
 1. Continue improving observation export and plotting workflows.
 2. Improve scenario configuration and possibly introduce external configuration files.
-3. Further harmonize quadrature rules across diagnostics.
-4. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
-5. Keep the dense solver available for regression checks on small cases.
-6. Prepare future scientific extensions:
+3. Consider adding console entry points through `pyproject.toml`.
+4. Further harmonize quadrature rules across diagnostics.
+5. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
+6. Keep the dense solver available for regression checks on small cases.
+7. Prepare future scientific extensions:
    - recruitment;
    - alternative mortality laws;
    - alternative growth functions;
    - alternative status definitions;
    - silvicultural or environmental scenarios.
-7. Consider packaging the project as an installable Python package.
+8. Continue improving visualization quality in a dedicated future step.

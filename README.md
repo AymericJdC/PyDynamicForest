@@ -1,4 +1,3 @@
-
 # PyDynamicForest
 
 PyDynamicForest is a Python research code for simulating size-structured forest stand dynamics.
@@ -47,6 +46,18 @@ Or install dependencies with:
     python -m pip install -r requirements.txt
 
 Main dependencies: numpy, scipy, matplotlib, pytest.
+
+## Editable installation
+
+PyDynamicForest can be installed in editable development mode from the repository root:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e .
+
+For development dependencies, use:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e ".[dev]"
+
+This makes the `pydynamicforest`, `simulations` and `scripts` modules importable while keeping the source tree editable.
 
 ## Tests
 

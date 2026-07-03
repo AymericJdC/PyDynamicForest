@@ -25,7 +25,21 @@ If the conda activation does not correctly select the Python interpreter, use:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -r requirements.txt
 
-## 2. Git workflow
+## 2. Editable installation
+
+Install the project in editable mode from the repository root:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e .
+
+Install with development dependencies:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e ".[dev]"
+
+Check that the package imports correctly:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -c "import pydynamicforest; print(pydynamicforest)"
+
+## 3. Git workflow
 
 ### Check current branch and status
 
@@ -49,7 +63,7 @@ If the conda activation does not correctly select the Python interpreter, use:
 
     git diff path\to\file.py
 
-## 3. Tests
+## 4. Tests
 
 ### Run the fast test suite
 
@@ -92,7 +106,7 @@ or together with other slow tests:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -k "observation"
 
-## 4. Baseline scenario configuration
+## 5. Baseline scenario configuration
 
 The baseline scenario values are centralized in:
 
@@ -117,7 +131,7 @@ It currently contains:
 
 This allows the baseline scenario to be modified from a single configuration file instead of editing several files independently.
 
-## 5. Baseline simulations
+## 6. Baseline simulations
 
 ### Run the short baseline scenario
 
@@ -143,7 +157,7 @@ For debugging or regression checks:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
 
-## 6. Legacy references
+## 7. Legacy references
 
 ### Run the short legacy reference
 
@@ -155,7 +169,7 @@ For debugging or regression checks:
 
 Warning: the reduced legacy reference uses the dense legacy solver and may be slower than the refactored sparse solver.
 
-## 7. Comparisons and validation
+## 8. Comparisons and validation
 
 ### Compare sparse refactor with reduced legacy reference
 
@@ -174,7 +188,7 @@ For the reduced reference case, the sparse refactored solver should match the le
 
 Typical discrepancies are expected to be close to machine precision.
 
-## 8. Observation exports
+## 9. Observation exports
 
 Selected model observations are exported as `.npz` files under:
 
@@ -205,7 +219,7 @@ Observation files contain:
 - `height_grid_physical`;
 - `dbh_grid_physical`.
 
-## 9. Plotting exported observations
+## 10. Plotting exported observations
 
 After running a simulation that exports observations, figures can be generated from the saved `.npz` files without rerunning the model.
 
@@ -231,7 +245,7 @@ The input and output directories can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse --figures-dir outputs\baseline_reduced_sparse\figures
 
-## 10. Plotting observation comparisons
+## 11. Plotting observation comparisons
 
 After exporting observations, comparison figures across stand ages can be generated with:
 
@@ -255,7 +269,7 @@ The input and output directories can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse --figures-dir outputs\baseline_reduced_sparse\figures\comparisons
 
-## 11. Plotting diagnostic time series
+## 12. Plotting diagnostic time series
 
 After running a simulation that exports `time_series.csv`, diagnostic figures can be generated without rerunning the model.
 
@@ -287,7 +301,7 @@ The input file and output directory can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv --figures-dir outputs\baseline_reduced_sparse\figures\time_series
 
-## 12. Syntax checks
+## 13. Syntax checks
 
 ### Compile a single Python file
 
@@ -297,7 +311,7 @@ The input file and output directory can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m compileall pydynamicforest
 
-## 13. Outputs
+## 14. Outputs
 
 Simulation outputs are currently written under:
 
@@ -317,7 +331,7 @@ Example:
         ├── comparisons/
         └── time_series/
 
-## 14. Development notes
+## 15. Development notes
 
 ### Main conceptual API
 
@@ -368,7 +382,7 @@ When `save_full_trajectory` is `False`, only states close to the requested stand
 
 In this codebase, observations are simulated model states selected for analysis. They should not be confused with empirical field observations.
 
-## 15. Common troubleshooting
+## 16. Common troubleshooting
 
 ### Python points to the wrong executable
 
@@ -401,7 +415,7 @@ Plotting uses the non-interactive `Agg` backend in `pydynamicforest/plotting.py`
 
 This avoids errors related to missing Tk libraries when generating figures in tests or batch runs.
 
-## 16. Recommended daily workflow
+## 17. Recommended daily workflow
 
 A typical development cycle is:
 
