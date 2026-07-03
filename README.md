@@ -9,9 +9,18 @@ The repository is currently being refactored from an initial research script int
 
 The current refactor introduces the API:
 
-    results = simulate(x0, p, c, solver_name="sparse")
+    results = simulate(x0, p, c)
 
 where `x0` is an `InitialCondition`, `p` is a `Parameters` object, `c` is a `SimulationContext`, and `results` is a `SimulationResults` object.
+
+The solver is selected automatically from the numerical parameters.
+
+For the baseline reduced scenario, the default solver is the sparse legacy-like solver.
+
+The solver can still be explicitly overridden when needed, for example for regression tests:
+
+    results = simulate(x0, p, c, solver_name="dense")
+    results = simulate(x0, p, c, solver_name="sparse")
 
 The sparse solver has been validated against the reduced legacy reference case up to numerical precision.
 

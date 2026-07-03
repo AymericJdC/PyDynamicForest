@@ -111,7 +111,6 @@ and can be run through:
         p,
         c,
         max_steps=10,
-        solver_name="sparse",
     )
 
 The baseline scenario separates:
@@ -191,6 +190,7 @@ The following components have been implemented.
 - implements a sparse legacy-like one-step solver;
 - implements a structured simulation loop;
 - supports observation selection by stand age;
+- selects the one-step solver from numerical parameters by default;
 - returns structured `SimulationResults`.
 
 The high-level simulation API is:
@@ -200,8 +200,12 @@ The high-level simulation API is:
         p,
         c,
         max_steps=None,
-        solver_name="sparse",
     )
+
+The solver can still be explicitly overridden if needed:
+
+    results = simulate(x0, p, c, solver_name="dense")
+    results = simulate(x0, p, c, solver_name="sparse")
 
 Available solver names are currently:
 
@@ -233,6 +237,45 @@ User-facing plotting scripts are available:
     scripts/plot_diagnostics.py
 
 They generate figures from exported observation files and time-series files without rerunning the simulation.
+
+## Solver selection
+
+The simulation solver is now selected from the numerical parameters by default.
+
+The standard API is therefore:
+
+    results = simulate(x0, p, c)
+
+The effective one-step solver is selected from:
+
+    p.numerics.matrix_storage
+
+Currently supported values are:
+
+- `"dense"`: uses the dense legacy-like solver;
+- `"sparse"`: uses the sparse legacy-like solver.
+
+For the baseline reduced scenario, the numerical parameters are configured as:
+
+    matrix_storage="sparse"
+    linear_solver="scipy.sparse.linalg.spsolve"
+
+Therefore, the default baseline simulation uses the sparse solver.
+
+For regression tests or debugging, the solver can still be explicitly overridden:
+
+    results = simulate(x0, p, c, solver_name="dense")
+
+or:
+
+    results = simulate(x0, p, c, solver_name="sparse")
+
+The simulation metadata records:
+
+- the effective solver used;
+- the requested solver override, if any;
+- the matrix storage mode;
+- the linear solver name.
 
 ## Sparse solver validation
 
@@ -466,6 +509,7 @@ The current test suite checks:
 - observation selection by stand age;
 - observation export and loading;
 - plotting utilities;
+- automatic solver selection from numerical parameters;
 - short legacy reference regression.
 
 Tests can be run with:
@@ -509,10 +553,7 @@ The following scripts are currently available.
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
 
-This runs a short baseline simulation using the sparse solver, typically with:
-
-    max_steps=10
-    solver_name="sparse"
+This runs a short baseline simulation using the solver defined by the numerical parameters.
 
 ### Full reduced sparse run
 
@@ -647,13 +688,12 @@ Recommended next steps:
 3. Consider adding combined figures comparing observations across ages.
 4. Further harmonize quadrature rules across diagnostics.
 5. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
-6. Make `sparse` the default solver for practical simulations.
-7. Keep the dense solver available for regression checks on small cases.
-8. Improve scenario configuration and possibly introduce configuration files.
-9. Prepare future scientific extensions:
+6. Keep the dense solver available for regression checks on small cases.
+7. Improve scenario configuration and possibly introduce configuration files.
+8. Prepare future scientific extensions:
    - recruitment;
    - alternative mortality laws;
    - alternative growth functions;
    - alternative status definitions;
    - silvicultural or environmental scenarios.
-10. Consider packaging the project as an installable Python package.
+9. Consider packaging the project as an installable Python package.
