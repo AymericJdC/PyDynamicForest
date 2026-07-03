@@ -1,15 +1,16 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""
-Baseline parameters for the reduced reference case.
 
-This file defines p, the Parameters object used in:
+"""
+Baseline model and numerical parameters.
+
+This module defines p, the Parameters object used in:
 
     results = simulate(x0, p, c)
 
-The object p separates:
-    - ModelParameters: scientific/model assumptions
-    - NumericalParameters: grid, time stepping, solver choices
+The scenario values are read from simulations.baseline.config.
 """
+
+from simulations.baseline.config import BASELINE_CONFIG
 
 from pydynamicforest.types import (
     CoefficientLaw,
@@ -18,127 +19,174 @@ from pydynamicforest.types import (
     NumericalParameters,
     Parameters,
     PhysicalScales,
+    StatusModel,
     TimeDiscretization,
 )
 
 
 def build_parameters() -> Parameters:
     """
-    Build the baseline parameter set corresponding to the reduced
-    legacy reference case.
+    Build baseline model and numerical parameters.
+
+    The baseline configuration corresponds to the reduced legacy reference
+    case, but uses the sparse legacy-like solver by default.
     """
+
+    scale_cfg = BASELINE_CONFIG["physical_scales"]
+    grid_cfg = BASELINE_CONFIG["grid"]
+    time_cfg = BASELINE_CONFIG["time"]
+    model_cfg = BASELINE_CONFIG["model"]
+    solver_cfg = BASELINE_CONFIG["solver"]
 
     # ------------------------------------------------------------------
     # Physical scales
     # ------------------------------------------------------------------
 
     physical_scales = PhysicalScales(
-        height_scale=50.0,
-        dbh_scale=0.9,
+        height_scale=scale_cfg["height_scale"],
+        dbh_scale=scale_cfg["dbh_scale"],
         height_unit="m",
         dbh_unit="m",
     )
 
-    Hphys = physical_scales.height_scale
-    Dphys = physical_scales.dbh_scale
-
-    Lx = 1.0
-    Ly = 1.0
-
     # ------------------------------------------------------------------
-    # Model coefficient laws
+    # Coefficient laws
     # ------------------------------------------------------------------
+
+    diffusion_value = model_cfg["diffusion"]["value"]
+    mortality_value = model_cfg["mortality"]["value"]
+
+    height_rate_normalized = (
+        model_cfg["height_growth"]["physical_rate"]
+        / physical_scales.height_scale
+    )
+
+    dbh_rate_normalized = (
+        model_cfg["dbh_growth"]["physical_rate"]
+        / physical_scales.dbh_scale
+    )
 
     def diffusion(t: float, x: float, y: float) -> float:
-        return 0.00001
+        return diffusion_value
 
     def mortality(t: float, x: float, y: float) -> float:
-        return 0.0365
-
-    rh = 1.78 / Hphys
+        return mortality_value
 
     def height_growth(t: float, x: float, y: float) -> float:
-        return rh * (1.0 - x / Lx)
-
-    rd = 0.0135 / Dphys
+        return height_rate_normalized * (1.0 - x)
 
     def dbh_growth(t: float, x: float, y: float) -> float:
-        return rd * (1.0 - y / Ly)
+        return dbh_rate_normalized * (1.0 - y)
+
+    diffusion_law = CoefficientLaw(
+        name=model_cfg["diffusion"]["name"],
+        function=diffusion,
+        description="Constant diffusion coefficient from baseline config.",
+        parameters={
+            "value": diffusion_value,
+        },
+        units="normalized^2/year",
+    )
+
+    mortality_law = CoefficientLaw(
+        name=model_cfg["mortality"]["name"],
+        function=mortality,
+        description="Constant mortality coefficient from baseline config.",
+        parameters={
+            "value": mortality_value,
+        },
+        units="1/year",
+    )
+
+    height_growth_law = CoefficientLaw(
+        name=model_cfg["height_growth"]["name"],
+        function=height_growth,
+        description=(
+            "Linear height growth velocity normalized by the physical "
+            "height scale."
+        ),
+        parameters={
+            "physical_rate": model_cfg["height_growth"]["physical_rate"],
+            "normalized_rate": height_rate_normalized,
+        },
+        units="normalized_height/year",
+    )
+
+    dbh_growth_law = CoefficientLaw(
+        name=model_cfg["dbh_growth"]["name"],
+        function=dbh_growth,
+        description=(
+            "Linear DBH growth velocity normalized by the physical "
+            "DBH scale."
+        ),
+        parameters={
+            "physical_rate": model_cfg["dbh_growth"]["physical_rate"],
+            "normalized_rate": dbh_rate_normalized,
+        },
+        units="normalized_dbh/year",
+    )
+
+    status_model = StatusModel(
+        name=model_cfg["status"]["name"],
+        description=model_cfg["status"]["description"],
+    )
 
     model = ModelParameters(
         physical_scales=physical_scales,
-        diffusion_law=CoefficientLaw(
-            name="constant_diffusion",
-            function=diffusion,
-            parameters={"value": 0.00001},
-            units="normalized_size_squared_per_year",
+        diffusion_law=diffusion_law,
+        mortality_law=mortality_law,
+        height_growth_law=height_growth_law,
+        dbh_growth_law=dbh_growth_law,
+        status_model=status_model,
+        description=(
+            "Baseline model parameters read from simulations.baseline.config."
         ),
-        mortality_law=CoefficientLaw(
-            name="constant_status_dependent_mortality",
-            function=mortality,
-            parameters={"value": 0.0365},
-            units="per_year",
-        ),
-        height_growth_law=CoefficientLaw(
-            name="linear_height_growth_velocity",
-            function=height_growth,
-            parameters={
-                "rh": rh,
-                "physical_increment": 1.78,
-            },
-            units="normalized_height_per_year",
-        ),
-        dbh_growth_law=CoefficientLaw(
-            name="linear_dbh_growth_velocity",
-            function=dbh_growth,
-            parameters={
-                "rd": rd,
-                "physical_increment": 0.0135,
-            },
-            units="normalized_dbh_per_year",
-        ),
-        description="Model parameters from the reduced legacy reference case.",
     )
 
     # ------------------------------------------------------------------
-    # Numerical parameters
+    # Numerical grid
     # ------------------------------------------------------------------
 
     grid = GridDefinition(
-        x_min=0.0,
-        x_max=1.0,
-        y_min=0.0,
-        y_max=1.0,
-        nx=20,
-        ny=20,
+        x_min=grid_cfg["x_min"],
+        x_max=grid_cfg["x_max"],
+        y_min=grid_cfg["y_min"],
+        y_max=grid_cfg["y_max"],
+        nx=grid_cfg["nx"],
+        ny=grid_cfg["ny"],
     )
 
+    # ------------------------------------------------------------------
+    # Time discretization
+    # ------------------------------------------------------------------
+
     time = TimeDiscretization(
-        t_start=0.0,
-        t_end=51.0,
-        n_steps=1000,
+        t_start=time_cfg["t_start"],
+        t_end=time_cfg["t_end"],
+        n_steps=time_cfg["n_steps"],
     )
+
+    # ------------------------------------------------------------------
+    # Numerical solver configuration
+    # ------------------------------------------------------------------
 
     numerics = NumericalParameters(
         grid=grid,
         time=time,
-        scheme_name="legacy_semi_implicit_sparse_reduced",
-        matrix_storage="sparse",
-        linear_solver="scipy.sparse.linalg.spsolve",
-        epsilon_zero_mass=1e-15,
-        positivity_tolerance=1e-12,
+        scheme_name=solver_cfg["scheme_name"],
+        matrix_storage=solver_cfg["matrix_storage"],
+        linear_solver=solver_cfg["linear_solver"],
+        epsilon_zero_mass=solver_cfg["epsilon_zero_mass"],
+        positivity_tolerance=solver_cfg["positivity_tolerance"],
         description=(
-            "Reduced numerical configuration using the sparse legacy-like "
-            "solver validated against the reduced legacy reference case."
+            "Baseline numerical parameters read from "
+            "simulations.baseline.config."
         ),
     )
 
     return Parameters(
-        name="baseline_reduced_parameters",
         model=model,
         numerics=numerics,
-        description=(
-            "Baseline reduced parameter set reproducing the reference "
-            "legacy configuration with Nx=20, Ny=20, Nt=1000."
-        ),
+        name=BASELINE_CONFIG["name"],
+        description=BASELINE_CONFIG["description"],
     )
