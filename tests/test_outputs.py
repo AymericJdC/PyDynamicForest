@@ -5,7 +5,7 @@ from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
 
 from pydynamicforest.solver import simulate
-from pydynamicforest.outputs import save_simulation_results
+from pydynamicforest.io import save_simulation_results
 
 
 def test_save_simulation_results_creates_expected_files(tmp_path):
@@ -99,7 +99,7 @@ def test_save_simulation_results_exports_observations_npz(tmp_path):
         
         assert data["height_grid"].shape == data["height_grid_physical"].shape
         assert data["dbh_grid"].shape == data["dbh_grid_physical"].shape
-        
+
         assert np.allclose(
             data["height_grid_physical"],
             data["height_grid"] * p.model.physical_scales.height_scale,

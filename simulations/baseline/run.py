@@ -19,7 +19,7 @@ from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
 
 from pydynamicforest.solver import simulate
-from pydynamicforest.outputs import save_simulation_results
+from pydynamicforest.io import save_simulation_results
 
 
 def main() -> None:
