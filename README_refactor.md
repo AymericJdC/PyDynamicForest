@@ -406,3 +406,28 @@ A full list of development, testing, simulation and validation commands is avail
 ```text
 COMMANDS.md
 ```
+## Mass conventions
+
+The refactor now distinguishes several mass conventions.
+
+### trapezoidal_mass
+
+This is the preferred diagnostic mass in the refactored code.
+
+It uses the two-dimensional trapezoidal quadrature on the normalized height-DBH grid.
+
+### legacy_mass
+
+This reproduces the mass formula used in the original legacy script:
+
+    dx * dy * np.sum(U[1:, 1:])
+
+This convention is kept for regression comparisons with the original implementation.
+
+### total_mass
+
+This is the default mass diagnostic used by the refactored code.
+
+Currently, total_mass is an alias for trapezoidal_mass.
+
+This distinction is important because legacy regression tests should use legacy_mass, whereas scientific diagnostics should preferably use trapezoidal_mass or total_mass.
