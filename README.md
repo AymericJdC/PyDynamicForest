@@ -67,7 +67,19 @@ Run the short baseline scenario with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
 
-Run the full reduced sparse baseline with:
+Run a configurable baseline simulation with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+Run the full reduced baseline with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+The solver is selected by default from the numerical parameters. It can be overridden explicitly:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
+
+The older explicit sparse baseline script is still available:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
 

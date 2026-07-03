@@ -78,9 +78,11 @@ The current refactor introduces the following objects in `pydynamicforest/types.
 
     scripts/
     ├── __init__.py
+    ├── run_baseline.py
     ├── run_baseline_reduced_sparse.py
     ├── compare_reduced_reference.py
     ├── plot_observations.py
+    ├── plot_observation_comparisons.py
     └── plot_diagnostics.py
 
     legacy/
@@ -119,6 +121,26 @@ The baseline scenario separates:
 - model and numerical parameters in `parameters.py`;
 - simulation context and requested observations in `context.py`;
 - the runnable scenario in `run.py`.
+
+## Configurable baseline run
+
+A configurable command-line script has been added:
+
+    scripts/run_baseline.py
+
+It can run either a short baseline simulation:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+or the full reduced baseline simulation:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+The script also allows an explicit solver override for debugging or regression checks:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
+
+By default, the solver is selected from the numerical parameters.
 
 ## Legacy reference
 
@@ -229,11 +251,13 @@ Available solver names are currently:
 - plots 2D density fields from exported observations;
 - plots marginal height distributions;
 - plots marginal DBH distributions;
-- plots diagnostic time series.
+- plots diagnostic time series;
+- plots comparison figures between observations.
 
 User-facing plotting scripts are available:
 
     scripts/plot_observations.py
+    scripts/plot_observation_comparisons.py
     scripts/plot_diagnostics.py
 
 They generate figures from exported observation files and time-series files without rerunning the simulation.
@@ -357,29 +381,12 @@ A plotting module has been introduced:
 
 It provides reusable functions to generate figures from exported observations.
 
-The current standard observation figures are:
-
-- 2D density field;
-- marginal height distribution;
-- marginal DBH distribution.
-
-A user-facing script is available:
+Observation plotting scripts include:
 
     scripts/plot_observations.py
+    scripts/plot_observation_comparisons.py
 
-It loads exported observation `.npz` files and generates figures without rerunning the simulation.
-
-Typical command:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
-
-By default, this reads observations from:
-
-    outputs/baseline_reduced_sparse/observations/
-
-and writes figures to:
-
-    outputs/baseline_reduced_sparse/figures/
+They generate individual and comparison figures from exported observations.
 
 ## Diagnostic time-series plotting
 
@@ -417,12 +424,6 @@ The standard diagnostic figures are:
 - top height;
 - basal area.
 
-By default, figures are plotted against stand age. They can also be plotted against simulation time with:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --x-key time
-
-This completes a basic workflow where simulations, observations and diagnostic time series can all be post-processed without rerunning the model.
-
 ## Mass conventions
 
 The refactor now distinguishes several mass conventions.
@@ -447,14 +448,10 @@ This is the default mass diagnostic used by the refactored code.
 
 Currently, `total_mass` is an alias for `trapezoidal_mass`.
 
-This distinction is important because legacy regression tests should use `legacy_mass`, whereas scientific diagnostics should preferably use `trapezoidal_mass` or `total_mass`.
-
 Time series now include both:
 
 - `total_mass`;
 - `legacy_mass`.
-
-This makes exported results easier to compare with the legacy implementation while preserving a cleaner diagnostic convention.
 
 ## Quadrature utilities
 
@@ -467,10 +464,6 @@ This includes:
 - `trapezoidal_weights_2d`;
 - `integrate_2d_trapezoidal`;
 - `cumulative_integral_2d_trapezoidal`.
-
-This avoids duplicating quadrature logic across initial condition construction and diagnostics.
-
-The current preferred convention for scientific diagnostics is the 2D trapezoidal rule.
 
 ## Important limitation
 
@@ -526,174 +519,65 @@ To run all tests, including slow tests:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "slow or not slow"
 
-## Slow regression test
-
-A slow regression test has been added for the reduced sparse reference case.
-
-It runs the full reduced baseline simulation with:
-
-    Nx = 20
-    Ny = 20
-    Nt = 1000
-    solver = sparse
-
-and compares the outputs against the reduced legacy reference.
-
-This test is marked with:
-
-    @pytest.mark.slow
-
-and is therefore not run by default.
-
 ## Scripts
 
 The following scripts are currently available.
+
+### Configurable baseline run
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+Full reduced baseline run:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+Explicit dense override:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
 
 ### Short baseline run
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
 
-This runs a short baseline simulation using the solver defined by the numerical parameters.
-
 ### Full reduced sparse run
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
-
-This runs the full reduced baseline case:
-
-    Nx = 20
-    Ny = 20
-    Nt = 1000
-    solver = sparse
-
-and exports results to:
-
-    outputs/baseline_reduced_sparse/
 
 ### Reduced reference comparison
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
 
-This compares the refactored sparse solver against:
-
-    reference_outputs/legacy_reduced_console_output.txt
-
-The comparison currently checks:
-
-- final top height;
-- final basal area;
-- final legacy mass;
-- minimum density over the trajectory.
-
 ### Observation plotting
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
 
-This script reads exported observations and generates figures for each observation.
+### Observation comparison plotting
 
-By default, it reads from:
-
-    outputs/baseline_reduced_sparse/observations/
-
-and writes to:
-
-    outputs/baseline_reduced_sparse/figures/
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons
 
 ### Diagnostic plotting
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
 
-This script reads:
+## License
 
-    outputs/baseline_reduced_sparse/time_series.csv
+PyDynamicForest is distributed under the GNU Lesser General Public License v3.0 or later.
 
-and writes figures to:
-
-    outputs/baseline_reduced_sparse/figures/time_series/
-
-## Environment and reproducibility
-
-The Python dependencies are documented in two files:
-
-    requirements.txt
-    environment.yml
-
-The conda environment can be recreated with:
-
-    conda env create -f environment.yml
-    conda activate pydynamicforest
-
-The package currently depends on:
-
-- numpy;
-- scipy;
-- matplotlib;
-- pytest.
-
-## Useful commands
-
-A full command reference is available in:
-
-    COMMANDS.md
-
-Run the full fast test suite:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests
-
-Run the short baseline scenario:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
-
-Run the full reduced sparse baseline:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
-
-Compare the sparse refactored solver with the reduced legacy reference:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
-
-Plot exported observations:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
-
-Plot diagnostic time series:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
-
-## Current validation status
-
-The sparse solver reproduces the reduced legacy reference case up to numerical precision for the main scalar outputs:
-
-- final top height;
-- final basal area;
-- final legacy mass;
-- minimum density over the trajectory.
-
-For the reduced reference case, the observed discrepancies are at or near machine precision.
-
-## Documentation files
-
-The current documentation files are:
-
-- `README.md`: user-facing project introduction;
-- `README_refactor.md`: technical and conceptual refactor notes;
-- `COMMANDS.md`: command reference for development, tests, scripts and troubleshooting.
+SPDX-License-Identifier: LGPL-3.0-or-later
 
 ## Next steps
 
 Recommended next steps:
 
-1. Review whether the reduced full sparse comparison should remain both a manual script and an optional slow regression test.
-2. Continue improving observation export and plotting workflows.
-3. Consider adding combined figures comparing observations across ages.
-4. Further harmonize quadrature rules across diagnostics.
-5. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
-6. Keep the dense solver available for regression checks on small cases.
-7. Improve scenario configuration and possibly introduce configuration files.
-8. Prepare future scientific extensions:
+1. Continue improving observation export and plotting workflows.
+2. Improve scenario configuration and possibly introduce configuration files.
+3. Further harmonize quadrature rules across diagnostics.
+4. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
+5. Keep the dense solver available for regression checks on small cases.
+6. Prepare future scientific extensions:
    - recruitment;
    - alternative mortality laws;
    - alternative growth functions;
    - alternative status definitions;
    - silvicultural or environmental scenarios.
-9. Consider packaging the project as an installable Python package.
+7. Consider packaging the project as an installable Python package.
