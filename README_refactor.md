@@ -1,3 +1,4 @@
+
 # PyDynamicForest refactor notes
 
 ## Purpose
@@ -71,6 +72,7 @@ The current refactor introduces the following objects in `pydynamicforest/types.
     simulations/
     └── baseline/
         ├── __init__.py
+        ├── config.py
         ├── initial_condition.py
         ├── parameters.py
         ├── context.py
@@ -121,6 +123,43 @@ The baseline scenario separates:
 - model and numerical parameters in `parameters.py`;
 - simulation context and requested observations in `context.py`;
 - the runnable scenario in `run.py`.
+
+## Baseline scenario configuration
+
+The baseline reduced scenario now uses a centralized Python configuration file:
+
+    simulations/baseline/config.py
+
+This file gathers the main scenario settings:
+
+- stand ages;
+- initial condition;
+- physical scales;
+- numerical grid;
+- time discretization;
+- model coefficient laws;
+- solver configuration;
+- output and observation settings.
+
+The builders:
+
+    build_initial_condition()
+    build_parameters()
+    build_context()
+
+read their values from this configuration.
+
+This is a first step toward more flexible scenario management.
+
+At this stage, the configuration is still expressed as a Python dictionary rather than an external YAML, JSON or TOML file. This avoids introducing an additional dependency and keeps the refactor incremental.
+
+Future scenario-management work may introduce:
+
+- alternative baseline configurations;
+- high-resolution sparse configurations;
+- dense debug configurations;
+- alternative growth or mortality scenarios;
+- external configuration files.
 
 ## Configurable baseline run
 
@@ -526,6 +565,7 @@ The current test suite checks:
 - observation export and loading;
 - plotting utilities;
 - automatic solver selection from numerical parameters;
+- centralized baseline scenario configuration;
 - end-to-end command-line workflow;
 - short legacy reference regression.
 
@@ -594,7 +634,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 Recommended next steps:
 
 1. Continue improving observation export and plotting workflows.
-2. Improve scenario configuration and possibly introduce configuration files.
+2. Improve scenario configuration and possibly introduce external configuration files.
 3. Further harmonize quadrature rules across diagnostics.
 4. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
 5. Keep the dense solver available for regression checks on small cases.

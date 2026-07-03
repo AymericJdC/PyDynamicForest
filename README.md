@@ -1,3 +1,4 @@
+
 # PyDynamicForest
 
 PyDynamicForest is a Python research code for simulating size-structured forest stand dynamics.
@@ -86,6 +87,31 @@ The solver is selected by default from the numerical parameters. It can be overr
 The older explicit sparse baseline script is still available:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
+
+## Baseline scenario configuration
+
+The baseline scenario is configured through:
+
+    simulations/baseline/config.py
+
+This file centralizes the main values used by the baseline scenario:
+
+- stand ages;
+- initial condition;
+- physical scales;
+- numerical grid;
+- time discretization;
+- model coefficient laws;
+- solver configuration;
+- output and observation settings.
+
+The following builders read their values from this configuration:
+
+    build_initial_condition()
+    build_parameters()
+    build_context()
+
+This provides a first step toward more flexible scenario management while keeping the current scenario definition simple and explicit.
 
 ## Validation against legacy references
 
