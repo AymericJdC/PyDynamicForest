@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 import numpy as np
 
+
 from pydynamicforest.plotting import (
     plot_observation_density,
     plot_height_distribution_from_observation,
@@ -8,7 +9,12 @@ from pydynamicforest.plotting import (
     plot_all_observation_figures,
     plot_time_series_metric,
     plot_standard_time_series,
+    plot_height_distributions_comparison,
+    plot_dbh_distributions_comparison,
+    plot_density_fields_comparison,
+    plot_all_observation_comparison_figures,
 )
+
 
 
 def make_fake_observation():
@@ -128,6 +134,82 @@ def test_plot_standard_time_series_creates_expected_files(tmp_path):
         "minimum_density",
         "top_height",
         "basal_area",
+    }
+
+    for figure_path in figures.values():
+        assert figure_path.exists()
+        assert figure_path.is_file()
+        assert figure_path.suffix == ".png"
+
+def make_fake_observations():
+    observations = []
+
+    for step_index, age, multiplier in [
+        (0, 18.0, 1.0),
+        (5, 45.0, 0.7),
+        (10, 69.0, 0.4),
+    ]:
+        observation = make_fake_observation()
+        observation["step_index"] = step_index
+        observation["age"] = age
+        observation["time"] = age - 18.0
+        observation["U"] = observation["U"] * multiplier
+        observations.append(observation)
+
+    return observations
+
+
+def test_plot_height_distributions_comparison_creates_file(tmp_path):
+    observations = make_fake_observations()
+
+    figure_path = plot_height_distributions_comparison(
+        observations,
+        output_dir=tmp_path,
+    )
+
+    assert figure_path.exists()
+    assert figure_path.is_file()
+    assert figure_path.suffix == ".png"
+
+
+def test_plot_dbh_distributions_comparison_creates_file(tmp_path):
+    observations = make_fake_observations()
+
+    figure_path = plot_dbh_distributions_comparison(
+        observations,
+        output_dir=tmp_path,
+    )
+
+    assert figure_path.exists()
+    assert figure_path.is_file()
+    assert figure_path.suffix == ".png"
+
+
+def test_plot_density_fields_comparison_creates_file(tmp_path):
+    observations = make_fake_observations()
+
+    figure_path = plot_density_fields_comparison(
+        observations,
+        output_dir=tmp_path,
+    )
+
+    assert figure_path.exists()
+    assert figure_path.is_file()
+    assert figure_path.suffix == ".png"
+
+
+def test_plot_all_observation_comparison_figures_creates_expected_files(tmp_path):
+    observations = make_fake_observations()
+
+    figures = plot_all_observation_comparison_figures(
+        observations,
+        output_dir=tmp_path,
+    )
+
+    assert set(figures.keys()) == {
+        "height_distributions",
+        "dbh_distributions",
+        "density_fields",
     }
 
     for figure_path in figures.values():

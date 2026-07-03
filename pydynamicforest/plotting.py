@@ -330,3 +330,264 @@ def plot_standard_time_series(
         )
 
     return figures
+def _normalized_grid_steps(observation: dict) -> tuple[float, float]:
+    """
+    Return normalized grid steps dx and dy from an observation dictionary.
+    """
+
+    height_grid = observation["height_grid"]
+    dbh_grid = observation["dbh_grid"]
+
+    if len(height_grid) > 1:
+        dx = float(height_grid[1] - height_grid[0])
+    else:
+        dx = 1.0
+
+    if len(dbh_grid) > 1:
+        dy = float(dbh_grid[1] - dbh_grid[0])
+    else:
+        dy = 1.0
+
+    return dx, dy
+
+
+def _observation_label(observation: dict) -> str:
+    """
+    Return a standard label for an observation.
+    """
+
+    age = observation["age"]
+    step_index = observation["step_index"]
+
+    return f"age={age:.3f}, step={step_index}"
+
+
+def plot_height_distributions_comparison(
+    observations: list[dict],
+    output_dir: str | Path,
+    filename: str = "height_distributions_comparison.png",
+) -> Path:
+    """
+    Plot marginal height distributions for several observations.
+
+    Each observation is expected to contain:
+        - U
+        - age
+        - step_index
+        - height_grid
+        - dbh_grid
+        - height_grid_physical
+
+    The marginal distribution is computed using the same simple convention
+    as previous observation plots:
+
+        counts_h = dx * dy * sum_j U[h_i, d_j]
+    """
+
+    if not observations:
+        raise ValueError("No observations provided for height comparison.")
+
+    output_path = ensure_figure_dir(output_dir)
+    figure_path = output_path / filename
+
+    plt.figure(figsize=(7, 5))
+
+    for observation in observations:
+        U = observation["U"]
+        height = observation["height_grid_physical"]
+
+        dx, dy = _normalized_grid_steps(observation)
+        counts = dx * dy * np.sum(U, axis=1)
+
+        plt.plot(
+            height,
+            counts,
+            marker="o",
+            linewidth=1.5,
+            label=_observation_label(observation),
+        )
+
+    plt.xlabel("Height (m)")
+    plt.ylabel("Number of trees")
+    plt.title("Height distributions across observations")
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(figure_path, dpi=150)
+    plt.close()
+
+    return figure_path
+
+
+def plot_dbh_distributions_comparison(
+    observations: list[dict],
+    output_dir: str | Path,
+    filename: str = "dbh_distributions_comparison.png",
+) -> Path:
+    """
+    Plot marginal DBH distributions for several observations.
+
+    Each observation is expected to contain:
+        - U
+        - age
+        - step_index
+        - height_grid
+        - dbh_grid
+        - dbh_grid_physical
+
+    The marginal distribution is computed using:
+
+        counts_d = dx * dy * sum_i U[h_i, d_j]
+    """
+
+    if not observations:
+        raise ValueError("No observations provided for DBH comparison.")
+
+    output_path = ensure_figure_dir(output_dir)
+    figure_path = output_path / filename
+
+    plt.figure(figsize=(7, 5))
+
+    for observation in observations:
+        U = observation["U"]
+        dbh_cm = observation["dbh_grid_physical"] * 100.0
+
+        dx, dy = _normalized_grid_steps(observation)
+        counts = dx * dy * np.sum(U, axis=0)
+
+        plt.plot(
+            dbh_cm,
+            counts,
+            marker="o",
+            linewidth=1.5,
+            label=_observation_label(observation),
+        )
+
+    plt.xlabel("DBH (cm)")
+    plt.ylabel("Number of trees")
+    plt.title("DBH distributions across observations")
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(figure_path, dpi=150)
+    plt.close()
+
+    return figure_path
+
+def plot_density_fields_comparison(
+    observations: list[dict],
+    output_dir: str | Path,
+    filename: str = "density_fields_comparison.png",
+    ncols: int = 3,
+) -> Path:
+    """
+    Plot 2D density fields for several observations in a grid of subplots.
+
+    A common color scale is used across all observations to make visual
+    comparison easier.
+    """
+
+    if not observations:
+        raise ValueError("No observations provided for density comparison.")
+
+    output_path = ensure_figure_dir(output_dir)
+    figure_path = output_path / filename
+
+    n_obs = len(observations)
+    ncols = max(1, min(ncols, n_obs))
+    nrows = int(np.ceil(n_obs / ncols))
+
+    vmax = max(float(np.max(observation["U"])) for observation in observations)
+    vmin = min(float(np.min(observation["U"])) for observation in observations)
+
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(5 * ncols, 4 * nrows),
+        squeeze=False,
+    )
+
+    last_mesh = None
+
+    for index, observation in enumerate(observations):
+        row = index // ncols
+        col = index % ncols
+
+        ax = axes[row, col]
+
+        U = observation["U"]
+        height = observation["height_grid_physical"]
+        dbh = observation["dbh_grid_physical"]
+        age = observation["age"]
+        step_index = observation["step_index"]
+
+        mesh = ax.pcolormesh(
+            dbh,
+            height,
+            U,
+            shading="auto",
+            vmin=vmin,
+            vmax=vmax,
+        )
+
+        last_mesh = mesh
+
+        ax.set_xlabel("DBH (m)")
+        ax.set_ylabel("Height (m)")
+        ax.set_title(f"Age {age:.3f}, step {step_index}")
+
+    # Hide unused axes if the grid is larger than the number of observations.
+    for index in range(n_obs, nrows * ncols):
+        row = index // ncols
+        col = index % ncols
+        axes[row, col].axis("off")
+
+    if last_mesh is not None:
+        fig.colorbar(
+            last_mesh,
+            ax=axes.ravel().tolist(),
+            label="Tree density",
+            shrink=0.9,
+        )
+
+
+    fig.suptitle("Density fields across observations")
+
+    fig.subplots_adjust(
+        top=0.88,
+        right=0.88,
+        wspace=0.35,
+        hspace=0.35,
+    )
+
+    fig.savefig(figure_path, dpi=150)
+    plt.close(fig)
+
+
+    return figure_path
+
+
+def plot_all_observation_comparison_figures(
+    observations: list[dict],
+    output_dir: str | Path,
+) -> dict[str, Path]:
+    """
+    Create all standard comparison figures for a list of observations.
+
+    Returns a dictionary of generated figure paths.
+    """
+
+    return {
+        "height_distributions": plot_height_distributions_comparison(
+            observations,
+            output_dir,
+        ),
+        "dbh_distributions": plot_dbh_distributions_comparison(
+            observations,
+            output_dir,
+        ),
+        "density_fields": plot_density_fields_comparison(
+            observations,
+            output_dir,
+        ),
+    }
