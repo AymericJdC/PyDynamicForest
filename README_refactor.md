@@ -397,3 +397,12 @@ Recommended next steps:
     - alternative growth functions;
     - alternative status definitions;
     - silvicultural or environmental scenarios.
+
+
+## Command reference
+
+A full list of development, testing, simulation and validation commands is available in:
+
+```text
+COMMANDS.md
+```
