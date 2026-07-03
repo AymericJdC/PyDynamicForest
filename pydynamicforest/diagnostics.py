@@ -13,15 +13,42 @@ from pydynamicforest.initial_conditions import integrate_2d_trapezoidal
 from pydynamicforest.types import Parameters, State
 
 
-def total_mass(U: np.ndarray, p: Parameters) -> float:
+def trapezoidal_mass(U: np.ndarray, p: Parameters) -> float:
     """
-    Compute total population mass using the trapezoidal rule.
+    Compute total population mass using the 2D trapezoidal rule.
 
-    The density U is defined on the normalized grid.
+    This is the preferred diagnostic mass in the refactored code.
     """
 
     grid = p.numerics.grid
     return integrate_2d_trapezoidal(U, grid.dx, grid.dy)
+
+
+def legacy_mass(U: np.ndarray, p: Parameters) -> float:
+    """
+    Compute total population mass using the legacy formula.
+
+    Legacy formula:
+        dx * dy * np.sum(U[1:, 1:])
+
+    This is intentionally kept for regression comparisons with the
+    original script.
+    """
+
+    grid = p.numerics.grid
+    return float(grid.dx * grid.dy * np.sum(U[1:, 1:]))
+
+
+def total_mass(U: np.ndarray, p: Parameters) -> float:
+    """
+    Compute total population mass.
+
+    By default, this function uses the trapezoidal mass convention.
+    It is kept as the main diagnostic mass function for backward
+    compatibility in the refactored code.
+    """
+
+    return trapezoidal_mass(U, p)
 
 
 def physical_height_grid(p: Parameters) -> np.ndarray:
@@ -178,3 +205,18 @@ def state_diagnostics(state: State, p: Parameters) -> dict[str, float]:
         "top_height": top_height(state.U, p),
         "basal_area": basal_area(state.U, p),
     } 
+
+
+def mass_diagnostics(U: np.ndarray, p: Parameters) -> dict[str, float]:
+    """
+    Return both mass conventions for comparison and traceability.
+    """
+
+    trap_mass = trapezoidal_mass(U, p)
+    leg_mass = legacy_mass(U, p)
+
+    return {
+        "trapezoidal_mass": trap_mass,
+        "legacy_mass": leg_mass,
+        "absolute_difference": abs(trap_mass - leg_mass),
+    }

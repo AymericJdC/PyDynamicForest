@@ -13,7 +13,9 @@ from pydynamicforest.diagnostics import (
     top_height,
     basal_area,
     minimum_density,
+    legacy_mass,
 )
+
 
 
 LEGACY_OUTPUT_PATH = Path("reference_outputs/legacy_reduced_console_output.txt")
@@ -68,15 +70,6 @@ def parse_legacy_reduced_outputs(path: Path) -> dict[str, float]:
     return values
 
 
-def legacy_mass_formula(U: np.ndarray, dx: float, dy: float) -> float:
-    """
-    Reproduce the legacy mass formula:
-
-        mass[n] = dx * dy * np.sum(U[n, 1:, 1:])
-    """
-
-    return float(dx * dy * np.sum(U[1:, 1:]))
-
 
 def relative_difference(a: float, b: float) -> float:
     """
@@ -107,12 +100,11 @@ def main() -> None:
     elapsed = perf_counter() - start
 
     U_final = results.final_state.U
-    grid = p.numerics.grid
 
     refactored = {
         "top_height_final": top_height(U_final, p),
         "basal_area_final": basal_area(U_final, p),
-        "final_mass": legacy_mass_formula(U_final, grid.dx, grid.dy),
+        "final_mass": legacy_mass(U_final, p),
         "minimum_U": min(results.time_series.minimum_density),
     }
 

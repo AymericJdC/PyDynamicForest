@@ -8,6 +8,7 @@ from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
 
+from pydynamicforest.diagnostics import legacy_mass
 from pydynamicforest.solver import simulate
 from pydynamicforest.diagnostics import top_height, basal_area
 
@@ -64,18 +65,6 @@ def parse_legacy_reduced_outputs(path: Path) -> dict[str, float]:
     return values
 
 
-def legacy_mass_formula(U: np.ndarray, dx: float, dy: float) -> float:
-    """
-    Reproduce the legacy mass formula:
-
-        mass[n] = dx * dy * np.sum(U[n, 1:, 1:])
-
-    This is intentionally different from the trapezoidal diagnostic mass.
-    """
-
-    return float(dx * dy * np.sum(U[1:, 1:]))
-
-
 @pytest.mark.slow
 def test_sparse_reduced_run_matches_legacy_reduced_reference():
     """
@@ -109,7 +98,7 @@ def test_sparse_reduced_run_matches_legacy_reduced_reference():
     refactored = {
         "top_height_final": top_height(U_final, p),
         "basal_area_final": basal_area(U_final, p),
-        "final_mass": legacy_mass_formula(U_final, grid.dx, grid.dy),
+        "final_mass": legacy_mass(U_final, p),
         "minimum_U": min(results.time_series.minimum_density),
     }
 
