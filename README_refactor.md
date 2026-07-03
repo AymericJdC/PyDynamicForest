@@ -80,7 +80,8 @@ The current refactor introduces the following objects in `pydynamicforest/types.
     ├── __init__.py
     ├── run_baseline_reduced_sparse.py
     ├── compare_reduced_reference.py
-    └── plot_observations.py
+    ├── plot_observations.py
+    └── plot_diagnostics.py
 
     legacy/
     ├── DynamicForestModel_2D_legacy.py
@@ -223,13 +224,15 @@ Available solver names are currently:
 
 - plots 2D density fields from exported observations;
 - plots marginal height distributions;
-- plots marginal DBH distributions.
+- plots marginal DBH distributions;
+- plots diagnostic time series.
 
-A user-facing plotting script is available:
+User-facing plotting scripts are available:
 
     scripts/plot_observations.py
+    scripts/plot_diagnostics.py
 
-It generates standard figures from exported observations without rerunning the simulation.
+They generate figures from exported observation files and time-series files without rerunning the simulation.
 
 ## Sparse solver validation
 
@@ -311,7 +314,7 @@ A plotting module has been introduced:
 
 It provides reusable functions to generate figures from exported observations.
 
-The current standard figures are:
+The current standard observation figures are:
 
 - 2D density field;
 - marginal height distribution;
@@ -335,14 +338,47 @@ and writes figures to:
 
     outputs/baseline_reduced_sparse/figures/
 
-This separates:
+## Diagnostic time-series plotting
 
-- simulation;
-- observation export;
-- observation loading;
-- plotting.
+Diagnostic time series are exported to:
 
-The plotting functions are reusable and can later be called from other scripts, notebooks or scenario-specific workflows.
+    time_series.csv
+
+A plotting utility has been added to generate figures from this file.
+
+The reusable functions are implemented in:
+
+    pydynamicforest/plotting.py
+
+The user-facing script is:
+
+    scripts/plot_diagnostics.py
+
+Typical command:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+
+By default, this reads:
+
+    outputs/baseline_reduced_sparse/time_series.csv
+
+and writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/time_series/
+
+The standard diagnostic figures are:
+
+- total mass;
+- legacy mass;
+- minimum density;
+- top height;
+- basal area.
+
+By default, figures are plotted against stand age. They can also be plotted against simulation time with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --x-key time
+
+This completes a basic workflow where simulations, observations and diagnostic time series can all be post-processed without rerunning the model.
 
 ## Mass conventions
 
@@ -522,6 +558,18 @@ and writes to:
 
     outputs/baseline_reduced_sparse/figures/
 
+### Diagnostic plotting
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+
+This script reads:
+
+    outputs/baseline_reduced_sparse/time_series.csv
+
+and writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/time_series/
+
 ## Environment and reproducibility
 
 The Python dependencies are documented in two files:
@@ -567,6 +615,10 @@ Plot exported observations:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
 
+Plot diagnostic time series:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+
 ## Current validation status
 
 The sparse solver reproduces the reduced legacy reference case up to numerical precision for the main scalar outputs:
@@ -592,7 +644,7 @@ Recommended next steps:
 
 1. Review whether the reduced full sparse comparison should remain both a manual script and an optional slow regression test.
 2. Continue improving observation export and plotting workflows.
-3. Add higher-level plotting scripts for time series diagnostics.
+3. Consider adding combined figures comparing observations across ages.
 4. Further harmonize quadrature rules across diagnostics.
 5. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
 6. Make `sparse` the default solver for practical simulations.

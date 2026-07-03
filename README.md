@@ -96,6 +96,8 @@ A typical output directory contains:
     summary.txt
     observations/
     figures/
+        observation_step_.../
+        time_series/
 
 The `observations/` directory contains exported `.npz` files for selected model observations.
 
@@ -129,6 +131,38 @@ For each observation, the script currently generates:
 - a 2D density field;
 - a height distribution;
 - a DBH distribution.
+
+## Plotting diagnostic time series
+
+After running a simulation and exporting the time series, standard diagnostic figures can be generated with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+
+This command reads:
+
+    outputs/baseline_reduced_sparse/time_series.csv
+
+and writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/time_series/
+
+The script currently generates one figure for each of the following diagnostics:
+
+- total mass;
+- legacy mass;
+- minimum density;
+- top height;
+- basal area.
+
+By default, the x-axis is stand age.
+
+The input file and output directory can also be specified explicitly:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv --figures-dir outputs\baseline_reduced_sparse\figures\time_series
+
+The x-axis can be changed from stand age to simulation time with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --x-key time
 
 ## Command reference
 

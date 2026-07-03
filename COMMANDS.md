@@ -187,7 +187,39 @@ The input and output directories can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse --figures-dir outputs\baseline_reduced_sparse\figures
 
-## 9. Syntax checks
+## 9. Plotting diagnostic time series
+
+After running a simulation that exports `time_series.csv`, diagnostic figures can be generated without rerunning the model.
+
+Default command:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+
+This command reads:
+
+    outputs/baseline_reduced_sparse/time_series.csv
+
+and writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/time_series/
+
+The script generates figures for:
+
+- total mass;
+- legacy mass;
+- minimum density;
+- top height;
+- basal area.
+
+Use simulation time instead of stand age on the x-axis with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --x-key time
+
+The input file and output directory can also be specified explicitly:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv --figures-dir outputs\baseline_reduced_sparse\figures\time_series
+
+## 10. Syntax checks
 
 ### Compile a single Python file
 
@@ -197,7 +229,7 @@ The input and output directories can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m compileall pydynamicforest
 
-## 10. Outputs
+## 11. Outputs
 
 Simulation outputs are currently written under:
 
@@ -213,8 +245,10 @@ Example:
     ├── summary.txt
     ├── observations/
     └── figures/
+        ├── observation_step_.../
+        └── time_series/
 
-## 11. Development notes
+## 12. Development notes
 
 ### Main conceptual API
 
@@ -249,7 +283,7 @@ When `save_full_trajectory` is `False`, only states close to the requested stand
 
 In this codebase, observations are simulated model states selected for analysis. They should not be confused with empirical field observations.
 
-## 12. Common troubleshooting
+## 13. Common troubleshooting
 
 ### Python points to the wrong executable
 
@@ -282,7 +316,7 @@ Plotting uses the non-interactive `Agg` backend in `pydynamicforest/plotting.py`
 
 This avoids errors related to missing Tk libraries when generating figures in tests or batch runs.
 
-## 13. Recommended daily workflow
+## 14. Recommended daily workflow
 
 A typical development cycle is:
 
