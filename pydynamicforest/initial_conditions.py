@@ -8,38 +8,7 @@ State objects on the numerical grid.
 import numpy as np
 
 from pydynamicforest.types import InitialCondition, Parameters, SimulationContext, State
-
-
-def trapezoidal_weights_2d(nx: int, ny: int) -> np.ndarray:
-    """
-    Return 2D trapezoidal weights on a tensor-product grid.
-
-    Interior points have weight 1.
-    Boundary points have weight 1/2 in the corresponding direction.
-    Corners have weight 1/4.
-    """
-
-    wx = np.ones(nx)
-    wy = np.ones(ny)
-
-    wx[0] = 0.5
-    wx[-1] = 0.5
-
-    wy[0] = 0.5
-    wy[-1] = 0.5
-
-    return np.outer(wx, wy)
-
-
-def integrate_2d_trapezoidal(V: np.ndarray, dx: float, dy: float) -> float:
-    """
-    Integrate a 2D field using the tensor-product trapezoidal rule.
-    """
-
-    nx, ny = V.shape
-    weights = trapezoidal_weights_2d(nx, ny)
-    return float(dx * dy * np.sum(weights * V))
-
+from pydynamicforest.numerics import integrate_2d_trapezoidal
 
 def build_gaussian_initial_density(
     x0: InitialCondition,

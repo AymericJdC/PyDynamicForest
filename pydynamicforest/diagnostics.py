@@ -9,7 +9,7 @@ Diagnostics are kept separate from the solver.
 
 import numpy as np
 
-from pydynamicforest.initial_conditions import integrate_2d_trapezoidal
+from pydynamicforest.numerics import integrate_2d_trapezoidal
 from pydynamicforest.types import Parameters, State
 
 
