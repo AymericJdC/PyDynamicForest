@@ -39,7 +39,31 @@ Check that the package imports correctly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -c "import pydynamicforest; print(pydynamicforest)"
 
-## 3. Git workflow
+## 3. Console entry points
+
+After editable installation, the following console commands are available:
+
+    pydf-run-baseline
+    pydf-run-baseline-reduced-sparse
+    pydf-compare-reduced-reference
+    pydf-plot-observations
+    pydf-plot-observation-comparisons
+    pydf-plot-diagnostics
+
+Example:
+
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+If the `pydf-*` commands are not found on Windows, use the full path to the executable, for example:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\Scripts\pydf-run-baseline.exe --max-steps 10 --output-dir outputs\baseline_short_cli
+
+A temporary fix for the current terminal is:
+
+    set "CONDA_ENV=C:\Users\saintemarie\.conda\envs\pydynamicforest"
+    set "PATH=%CONDA_ENV%;%CONDA_ENV%\Scripts;%CONDA_ENV%\Library\bin;%PATH%"
+
+## 4. Git workflow
 
 ### Check current branch and status
 
@@ -63,7 +87,7 @@ Check that the package imports correctly:
 
     git diff path\to\file.py
 
-## 4. Tests
+## 5. Tests
 
 ### Run the fast test suite
 
@@ -106,7 +130,7 @@ or together with other slow tests:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -k "observation"
 
-## 5. Baseline scenario configuration
+## 6. Baseline scenario configuration
 
 The baseline scenario values are centralized in:
 
@@ -131,19 +155,25 @@ It currently contains:
 
 This allows the baseline scenario to be modified from a single configuration file instead of editing several files independently.
 
-## 6. Baseline simulations
-
-### Run the short baseline scenario
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
-
-This runs a short sparse simulation using the solver selected from numerical parameters.
+## 7. Baseline simulations
 
 ### Run a configurable short baseline simulation
+
+Recommended entry point:
+
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+Equivalent developer command:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
 
 ### Run the full reduced baseline
+
+Recommended entry point:
+
+    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+Equivalent developer command:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
 
@@ -151,13 +181,17 @@ This runs a short sparse simulation using the solver selected from numerical par
 
 For debugging or regression checks:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
+    pydf-run-baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
 
 ### Run the older explicit reduced sparse baseline script
 
+    pydf-run-baseline-reduced-sparse
+
+or:
+
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
 
-## 7. Legacy references
+## 8. Legacy references
 
 ### Run the short legacy reference
 
@@ -169,9 +203,15 @@ For debugging or regression checks:
 
 Warning: the reduced legacy reference uses the dense legacy solver and may be slower than the refactored sparse solver.
 
-## 8. Comparisons and validation
+## 9. Comparisons and validation
 
 ### Compare sparse refactor with reduced legacy reference
+
+Recommended entry point:
+
+    pydf-compare-reduced-reference
+
+Equivalent developer command:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
 
@@ -188,7 +228,7 @@ For the reduced reference case, the sparse refactored solver should match the le
 
 Typical discrepancies are expected to be close to machine precision.
 
-## 9. Observation exports
+## 10. Observation exports
 
 Selected model observations are exported as `.npz` files under:
 
@@ -219,21 +259,17 @@ Observation files contain:
 - `height_grid_physical`;
 - `dbh_grid_physical`.
 
-## 10. Plotting exported observations
+## 11. Plotting exported observations
 
 After running a simulation that exports observations, figures can be generated from the saved `.npz` files without rerunning the model.
 
-Default command:
+Recommended entry point:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
+    pydf-plot-observations --input-dir outputs\baseline_reduced_sparse
 
-This command reads observations from:
+Equivalent developer command:
 
-    outputs/baseline_reduced_sparse/observations/
-
-and writes figures to:
-
-    outputs/baseline_reduced_sparse/figures/
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse
 
 The script generates, for each observation:
 
@@ -241,23 +277,15 @@ The script generates, for each observation:
 - a height distribution;
 - a DBH distribution.
 
-The input and output directories can also be specified explicitly:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse --figures-dir outputs\baseline_reduced_sparse\figures
-
-## 11. Plotting observation comparisons
+## 12. Plotting observation comparisons
 
 After exporting observations, comparison figures across stand ages can be generated with:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons
+    pydf-plot-observation-comparisons --input-dir outputs\baseline_reduced_sparse
 
-This command reads observations from:
+Equivalent developer command:
 
-    outputs/baseline_reduced_sparse/observations/
-
-and writes figures to:
-
-    outputs/baseline_reduced_sparse/figures/comparisons/
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse
 
 The script generates:
 
@@ -265,25 +293,17 @@ The script generates:
 - DBH distribution comparisons;
 - density field comparisons.
 
-The input and output directories can also be specified explicitly:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse --figures-dir outputs\baseline_reduced_sparse\figures\comparisons
-
-## 12. Plotting diagnostic time series
+## 13. Plotting diagnostic time series
 
 After running a simulation that exports `time_series.csv`, diagnostic figures can be generated without rerunning the model.
 
-Default command:
+Recommended entry point:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
 
-This command reads:
+Equivalent developer command:
 
-    outputs/baseline_reduced_sparse/time_series.csv
-
-and writes figures to:
-
-    outputs/baseline_reduced_sparse/figures/time_series/
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
 
 The script generates figures for:
 
@@ -295,13 +315,9 @@ The script generates figures for:
 
 Use simulation time instead of stand age on the x-axis with:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --x-key time
+    pydf-plot-diagnostics --x-key time
 
-The input file and output directory can also be specified explicitly:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv --figures-dir outputs\baseline_reduced_sparse\figures\time_series
-
-## 13. Syntax checks
+## 14. Syntax checks
 
 ### Compile a single Python file
 
@@ -311,7 +327,7 @@ The input file and output directory can also be specified explicitly:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m compileall pydynamicforest
 
-## 14. Outputs
+## 15. Outputs
 
 Simulation outputs are currently written under:
 
@@ -331,7 +347,7 @@ Example:
         ├── comparisons/
         └── time_series/
 
-## 15. Development notes
+## 16. Development notes
 
 ### Main conceptual API
 
@@ -382,7 +398,7 @@ When `save_full_trajectory` is `False`, only states close to the requested stand
 
 In this codebase, observations are simulated model states selected for analysis. They should not be confused with empirical field observations.
 
-## 16. Common troubleshooting
+## 17. Common troubleshooting
 
 ### Python points to the wrong executable
 
@@ -394,6 +410,23 @@ Check:
 If needed, use the explicit interpreter:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe
+
+### Console entry points are not found
+
+If commands such as `pydf-run-baseline` are not found, check whether the environment `Scripts` directory is in the `PATH`.
+
+The expected directory is:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\Scripts
+
+You can use the full executable path:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\Scripts\pydf-run-baseline.exe --max-steps 10 --output-dir outputs\baseline_short_cli
+
+Or temporarily update the current terminal:
+
+    set "CONDA_ENV=C:\Users\saintemarie\.conda\envs\pydynamicforest"
+    set "PATH=%CONDA_ENV%;%CONDA_ENV%\Scripts;%CONDA_ENV%\Library\bin;%PATH%"
 
 ### `ModuleNotFoundError: No module named 'simulations'`
 
@@ -415,21 +448,25 @@ Plotting uses the non-interactive `Agg` backend in `pydynamicforest/plotting.py`
 
 This avoids errors related to missing Tk libraries when generating figures in tests or batch runs.
 
-## 17. Recommended daily workflow
+## 18. Recommended daily workflow
 
 A typical development cycle is:
 
     git status
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
     git add <modified_files>
     git commit -m "Meaningful commit message"
     git push origin refactor-julien
 
+If the `pydf-*` commands are not available, use the explicit Python module form:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
 For deeper validation, run:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
+    pydf-compare-reduced-reference
 
 For end-to-end CLI validation, run:
 

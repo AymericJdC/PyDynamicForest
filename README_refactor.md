@@ -168,15 +168,21 @@ A configurable command-line script has been added:
 
 It can run either a short baseline simulation:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
 
 or the full reduced baseline simulation:
+
+    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+The equivalent developer commands using `python -m` remain available:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
 
 The script also allows an explicit solver override for debugging or regression checks:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
+    pydf-run-baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
 
 By default, the solver is selected from the numerical parameters.
 
@@ -200,12 +206,34 @@ The current packaging configuration includes:
 
 This keeps the existing command-line workflow based on `python -m scripts...` functional after editable installation.
 
-Future packaging work may introduce console entry points such as:
+## Console entry points
+
+Console entry points have been added through `pyproject.toml`.
+
+After editable installation, the following commands are available:
 
     pydf-run-baseline
+    pydf-run-baseline-reduced-sparse
+    pydf-compare-reduced-reference
     pydf-plot-observations
     pydf-plot-observation-comparisons
     pydf-plot-diagnostics
+
+These commands are wrappers around the corresponding script modules.
+
+For example:
+
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+is equivalent to:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+If the `pydf-*` commands are not found on Windows, check that the `Scripts` directory of the environment is available in the `PATH`.
+
+The executables can also be called explicitly, for example:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\Scripts\pydf-run-baseline.exe --max-steps 10 --output-dir outputs\baseline_short_cli
 
 ## Legacy reference
 
@@ -471,7 +499,7 @@ The user-facing script is:
 
 Typical command:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
 
 By default, this reads:
 
@@ -593,6 +621,7 @@ The current test suite checks:
 - automatic solver selection from numerical parameters;
 - centralized baseline scenario configuration;
 - editable packaging;
+- console entry points;
 - end-to-end command-line workflow;
 - short legacy reference regression.
 
@@ -616,39 +645,35 @@ The following scripts are currently available.
 
 ### Configurable baseline run
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
 
 Full reduced baseline run:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
 
 Explicit dense override:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
-
-### Short baseline run
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
+    pydf-run-baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
 
 ### Full reduced sparse run
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
+    pydf-run-baseline-reduced-sparse
 
 ### Reduced reference comparison
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
+    pydf-compare-reduced-reference
 
 ### Observation plotting
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
+    pydf-plot-observations --input-dir outputs\baseline_reduced_sparse
 
 ### Observation comparison plotting
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons
+    pydf-plot-observation-comparisons --input-dir outputs\baseline_reduced_sparse
 
 ### Diagnostic plotting
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
 
 ## License
 
@@ -662,7 +687,7 @@ Recommended next steps:
 
 1. Continue improving observation export and plotting workflows.
 2. Improve scenario configuration and possibly introduce external configuration files.
-3. Consider adding console entry points through `pyproject.toml`.
+3. Further consolidate console entry points and CLI tests.
 4. Further harmonize quadrature rules across diagnostics.
 5. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
 6. Keep the dense solver available for regression checks on small cases.

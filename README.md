@@ -59,6 +59,35 @@ For development dependencies, use:
 
 This makes the `pydynamicforest`, `simulations` and `scripts` modules importable while keeping the source tree editable.
 
+## Console entry points
+
+After editable installation, PyDynamicForest provides command-line entry points.
+
+Recommended commands include:
+
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+    pydf-plot-observations --input-dir outputs\baseline_short_cli
+
+    pydf-plot-observation-comparisons --input-dir outputs\baseline_short_cli
+
+    pydf-plot-diagnostics --input-file outputs\baseline_short_cli\time_series.csv
+
+    pydf-compare-reduced-reference
+
+The corresponding developer-style commands using `python -m` remain available.
+
+If the `pydf-*` commands are not found on Windows, verify that the `Scripts` directory of the environment is available in the `PATH`, or use the full executable path, for example:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\Scripts\pydf-run-baseline.exe --max-steps 10 --output-dir outputs\baseline_short_cli
+
+A temporary fix for the current terminal is:
+
+    set "CONDA_ENV=C:\Users\saintemarie\.conda\envs\pydynamicforest"
+    set "PATH=%CONDA_ENV%;%CONDA_ENV%\Scripts;%CONDA_ENV%\Library\bin;%PATH%"
+
 ## Tests
 
 Run fast tests with:
@@ -85,17 +114,29 @@ Run the short baseline scenario with:
 
 Run a configurable baseline simulation with:
 
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+or equivalently:
+
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
 
 Run the full reduced baseline with:
+
+    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+or equivalently:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
 
 The solver is selected by default from the numerical parameters. It can be overridden explicitly:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
+    pydf-run-baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
 
 The older explicit sparse baseline script is still available:
+
+    pydf-run-baseline-reduced-sparse
+
+or:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
 
@@ -129,6 +170,10 @@ This provides a first step toward more flexible scenario management while keepin
 The original implementation is preserved in the `legacy/` directory.
 
 Compare the sparse refactored solver with the reduced legacy reference using:
+
+    pydf-compare-reduced-reference
+
+or equivalently:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
 
@@ -179,7 +224,11 @@ Each observation file contains:
 
 After running a simulation and exporting observations, standard figures can be generated with:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
+    pydf-plot-observations --input-dir outputs\baseline_reduced_sparse
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse
 
 This command reads exported observations from:
 
@@ -199,7 +248,11 @@ For each observation, the script currently generates:
 
 After exporting observations, comparison figures across stand ages can be generated with:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons
+    pydf-plot-observation-comparisons --input-dir outputs\baseline_reduced_sparse
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse
 
 This command reads exported observations from:
 
@@ -219,13 +272,13 @@ The script currently generates:
 
 After running a simulation and exporting the time series, standard diagnostic figures can be generated with:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics
+    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
 
-This command reads:
+or equivalently:
 
-    outputs/baseline_reduced_sparse/time_series.csv
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
 
-and writes figures to:
+The command writes figures to:
 
     outputs/baseline_reduced_sparse/figures/time_series/
 
@@ -241,11 +294,11 @@ By default, the x-axis is stand age.
 
 The input file and output directory can also be specified explicitly:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv --figures-dir outputs\baseline_reduced_sparse\figures\time_series
+    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv --figures-dir outputs\baseline_reduced_sparse\figures\time_series
 
 The x-axis can be changed from stand age to simulation time with:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --x-key time
+    pydf-plot-diagnostics --x-key time
 
 ## Command reference
 
