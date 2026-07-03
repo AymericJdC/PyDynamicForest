@@ -144,10 +144,24 @@ def save_metadata_json(
         },
         "run_metadata": results.metadata,
         "final_state": {
-            "step_index": results.final_state.step_index,
+           "step_index": results.final_state.step_index,
             "time": results.final_state.time,
             "age": results.final_state.age,
             "shape": list(results.final_state.U.shape),
+        },
+        "snapshots": {
+            "number": len(results.snapshots),
+            "requested_ages": results.context.output.snapshot_ages,
+            "save_full_trajectory": results.context.output.save_full_trajectory,
+            "saved": [
+                {
+                    "step_index": snapshot.step_index,
+                    "time": snapshot.time,
+                    "age": snapshot.age,
+                    "shape": list(snapshot.U.shape),
+                }
+                for snapshot in results.snapshots
+            ],
         },
     }
 
@@ -210,7 +224,26 @@ def save_summary_txt(
             f.write(f"top_height        = {ts.top_height[-1]}\n")
         if ts.basal_area:
             f.write(f"basal_area        = {ts.basal_area[-1]}\n")
+        
+        f.write("\nSnapshots\n")
+        f.write("---------\n")
+        f.write(f"number              = {len(results.snapshots)}\n")
+        f.write(
+            f"requested_ages      = "
+            f"{results.context.output.snapshot_ages}\n"
+        )
+        f.write(
+            f"save_full_trajectory = "
+            f"{results.context.output.save_full_trajectory}\n"
+        )
 
+        for snapshot in results.snapshots:
+            f.write(
+                f"step={snapshot.step_index}, "
+                f"time={snapshot.time}, "
+                f"age={snapshot.age}, "
+                f"shape={snapshot.U.shape}\n"
+            )
     return summary_path
 
 
