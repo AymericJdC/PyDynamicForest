@@ -21,7 +21,6 @@ def main() -> None:
         p,
         c,
         max_steps=None,
-        solver_name="sparse",
     )
 
     elapsed = perf_counter() - start

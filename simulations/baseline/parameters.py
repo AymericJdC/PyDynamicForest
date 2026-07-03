@@ -122,14 +122,14 @@ def build_parameters() -> Parameters:
     numerics = NumericalParameters(
         grid=grid,
         time=time,
-        scheme_name="legacy_semi_implicit_dense_reduced",
-        matrix_storage="dense",
-        linear_solver="numpy.linalg.solve",
+        scheme_name="legacy_semi_implicit_sparse_reduced",
+        matrix_storage="sparse",
+        linear_solver="scipy.sparse.linalg.spsolve",
         epsilon_zero_mass=1e-15,
         positivity_tolerance=1e-12,
         description=(
-            "Reduced numerical configuration used for regression against "
-            "the reduced legacy reference case."
+            "Reduced numerical configuration using the sparse legacy-like "
+            "solver validated against the reduced legacy reference case."
         ),
     )
 

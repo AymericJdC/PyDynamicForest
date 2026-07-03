@@ -95,7 +95,6 @@ def main() -> None:
         p,
         c,
         max_steps=None,
-        solver_name="sparse",
     )
 
     elapsed = perf_counter() - start
@@ -114,7 +113,7 @@ def main() -> None:
     print("============================")
     print()
     print(f"Legacy output file: {LEGACY_OUTPUT_PATH}")
-    print(f"Refactored solver : sparse")
+    print(f"Refactored solver : {results.metadata['solver']}")
     print(f"Elapsed time      : {elapsed:.2f} seconds")
     print()
     print("Final state")

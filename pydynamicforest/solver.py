@@ -570,13 +570,45 @@ def should_save_observation(
         for requested_age in c.output.observation_ages
     )
 
+def select_one_step_solver(
+    p: Parameters,
+    solver_name: str | None = None,
+):
+    """
+    Select the one-step solver.
+
+    If solver_name is explicitly provided, it has priority.
+
+    If solver_name is None, the solver is selected from
+    p.numerics.matrix_storage.
+
+    Supported values:
+        - "dense"
+        - "sparse"
+    """
+
+    if solver_name is not None:
+        selected_solver = solver_name
+    else:
+        selected_solver = p.numerics.matrix_storage
+
+    if selected_solver == "dense":
+        return advance_one_step_dense_legacy, "dense_legacy"
+
+    if selected_solver == "sparse":
+        return advance_one_step_sparse_legacy, "sparse_legacy"
+
+    raise ValueError(
+        f"Unknown solver selection: {selected_solver}. "
+        "Expected 'dense' or 'sparse'."
+    )
 
 def simulate(
     x0: InitialCondition,
     p: Parameters,
     c: SimulationContext,
     max_steps: int | None = None,
-    solver_name: str = "dense",
+    solver_name: str | None = None,
 ) -> SimulationResults:
     """
     Run a simulation from an InitialCondition, Parameters and SimulationContext.
@@ -597,9 +629,12 @@ def simulate(
         Optional maximum number of time steps. This is useful during refactoring
         to run short simulations without executing the full legacy configuration.
     solver_name:
-        Name of the one-step solver to use:
-            - "dense"
-            - "sparse"
+            Optional solver override:
+                - "dense"
+                - "sparse"
+
+            If None, the solver is selected from p.numerics.matrix_storage.
+
 
     Returns
     -------
@@ -609,15 +644,10 @@ def simulate(
 
     state = build_initial_state(x0, p, c)
 
-    if solver_name == "dense":
-        advance_one_step = advance_one_step_dense_legacy
-    elif solver_name == "sparse":
-        advance_one_step = advance_one_step_sparse_legacy
-    else:
-        raise ValueError(
-            f"Unknown solver_name: {solver_name}. "
-            "Expected 'dense' or 'sparse'."
-        )
+    advance_one_step, resolved_solver_name = select_one_step_solver(
+    p,
+    solver_name=solver_name,
+)
 
     n_steps = p.numerics.time.n_steps
 
@@ -662,7 +692,10 @@ def simulate(
         "n_steps_requested": p.numerics.time.n_steps,
         "n_steps_run": n_steps,
         "dt": p.numerics.time.dt,
-        "solver": f"{solver_name}_legacy",
+        "solver": resolved_solver_name,
+        "solver_requested": solver_name,
+        "matrix_storage": p.numerics.matrix_storage,
+        "linear_solver": p.numerics.linear_solver,
         "max_steps": max_steps,
     }
 

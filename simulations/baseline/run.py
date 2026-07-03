@@ -35,7 +35,6 @@ def main() -> None:
         p,
         c,
         max_steps=10,
-        solver_name="sparse",
     )
 
     elapsed = perf_counter() - start
