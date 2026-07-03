@@ -49,6 +49,14 @@ dev = [
     "pytest"
 ]
 
+[project.scripts]
+pydf-run-baseline = "scripts.run_baseline:main"
+pydf-run-baseline-reduced-sparse = "scripts.run_baseline_reduced_sparse:main"
+pydf-compare-reduced-reference = "scripts.compare_reduced_reference:main"
+pydf-plot-observations = "scripts.plot_observations:main"
+pydf-plot-observation-comparisons = "scripts.plot_observation_comparisons:main"
+pydf-plot-diagnostics = "scripts.plot_diagnostics:main"
+
 [project.urls]
 Repository = "https://github.com/"
 Documentation = "https://github.com/"
