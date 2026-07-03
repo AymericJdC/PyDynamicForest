@@ -48,6 +48,10 @@ Run slow tests with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
 
+Run all tests, including slow tests, with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "slow or not slow"
+
 ## Simulations
 
 Run the short baseline scenario with:
@@ -78,6 +82,9 @@ This avoids hard-coded indices such as:
 
     U[5294,:,:]
 
+In PyDynamicForest, observations are simulated model states selected for storage and analysis at requested stand ages.
+They should not be confused with empirical field observations.
+
 ## Output files
 
 Simulation outputs are written to the `outputs/` directory, which is ignored by Git.
@@ -87,14 +94,12 @@ A typical output directory contains:
     time_series.csv
     metadata.json
     summary.txt
+    observations/
+    figures/
 
-## Observation exports
+The `observations/` directory contains exported `.npz` files for selected model observations.
 
-Selected model observations are exported as `.npz` files under:
-
-    outputs/<run_name>/observations/
-
-Each observation file currently contains:
+Each observation file contains:
 
 - `U`: simulated density field;
 - `time`: simulation time;
@@ -105,7 +110,25 @@ Each observation file currently contains:
 - `height_grid_physical`: height grid in physical units;
 - `dbh_grid_physical`: DBH grid in physical units.
 
-These files allow post-processing, plotting and comparison of selected model states without rerunning the simulation.
+## Plotting observations
+
+After running a simulation and exporting observations, standard figures can be generated with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
+
+This command reads exported observations from:
+
+    outputs/baseline_reduced_sparse/observations/
+
+and writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/
+
+For each observation, the script currently generates:
+
+- a 2D density field;
+- a height distribution;
+- a DBH distribution.
 
 ## Command reference
 
@@ -127,9 +150,11 @@ The dense solver is retained for regression checks but is computationally expens
 
 The sparse solver is preferred for practical runs.
 
-The distinction between legacy mass, trapezoidal mass, and scientific diagnostic mass still needs to be clarified.
+The distinction between legacy mass, trapezoidal mass, and scientific diagnostic mass has been clarified in the code, but the scientific interpretation of these conventions still needs to be reviewed.
 
-Quadrature conventions should be harmonized across diagnostics.
+Quadrature conventions should continue to be harmonized across diagnostics.
+
+Future scientific extensions such as recruitment, alternative mortality laws, alternative growth functions and alternative status definitions remain to be implemented.
 
 ## Authors and contributors
 

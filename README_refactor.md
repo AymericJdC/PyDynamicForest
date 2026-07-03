@@ -15,8 +15,6 @@ The refactor follows a progressive strategy:
 5. validate each refactor step against legacy behavior;
 6. progressively improve the numerical implementation.
 
----
-
 ## Conceptual architecture
 
 The target conceptual API is:
@@ -36,8 +34,6 @@ The object `Parameters` separates:
 - `NumericalParameters`: grid, time discretization, numerical scheme and solver choices.
 
 This structure is inspired by the conceptual organization previously used in C-STABILITY, where a simulation is defined by an initial state, a set of parameters and a context.
-
----
 
 ## Main conceptual objects
 
@@ -59,8 +55,6 @@ The current refactor introduces the following objects in `pydynamicforest/types.
 - `TimeSeries`
 - `SimulationResults`
 
----
-
 ## Current package structure
 
     pydynamicforest/
@@ -71,7 +65,8 @@ The current refactor introduces the following objects in `pydynamicforest/types.
     ├── numerics.py
     ├── solver.py
     ├── diagnostics.py
-    └── outputs.py
+    ├── io.py
+    └── plotting.py
 
     simulations/
     └── baseline/
@@ -84,7 +79,8 @@ The current refactor introduces the following objects in `pydynamicforest/types.
     scripts/
     ├── __init__.py
     ├── run_baseline_reduced_sparse.py
-    └── compare_reduced_reference.py
+    ├── compare_reduced_reference.py
+    └── plot_observations.py
 
     legacy/
     ├── DynamicForestModel_2D_legacy.py
@@ -94,8 +90,6 @@ The current refactor introduces the following objects in `pydynamicforest/types.
     tests/
     reference_outputs/
     outputs/
-
----
 
 ## Scenario structure
 
@@ -126,8 +120,6 @@ The baseline scenario separates:
 - simulation context and requested observations in `context.py`;
 - the runnable scenario in `run.py`.
 
----
-
 ## Legacy reference
 
 The original script has been preserved in:
@@ -143,8 +135,6 @@ A short reference case has been created for fast regression checks:
     legacy/DynamicForestModel_2D_short_reference.py
 
 The reduced and short reference cases are used to compare the refactored implementation against the original legacy numerical behavior.
-
----
 
 ## Current status
 
@@ -217,16 +207,29 @@ Available solver names are currently:
 - `"dense"`: dense legacy-like solver using `numpy.linalg.solve`;
 - `"sparse"`: sparse legacy-like solver using `scipy.sparse`.
 
-### Outputs
+### I/O
 
-`pydynamicforest/outputs.py`
+`pydynamicforest/io.py`
 
 - exports time series to CSV;
 - exports metadata to JSON;
 - exports a human-readable summary;
-- records saved observations in metadata and summary files.
+- exports selected observations as `.npz` files;
+- loads exported observations from `.npz` files.
 
----
+### Plotting
+
+`pydynamicforest/plotting.py`
+
+- plots 2D density fields from exported observations;
+- plots marginal height distributions;
+- plots marginal DBH distributions.
+
+A user-facing plotting script is available:
+
+    scripts/plot_observations.py
+
+It generates standard figures from exported observations without rerunning the simulation.
 
 ## Sparse solver validation
 
@@ -256,8 +259,6 @@ The reduced sparse case currently runs in approximately 9 seconds on the working
 
 The dense solver is retained as a regression reference on small cases, but the sparse solver should now be preferred for practical simulations.
 
----
-
 ## Observation management
 
 The simulation context supports observation selection by stand age.
@@ -281,7 +282,6 @@ This avoids hard-coded numerical indices such as:
 
 and makes output selection closer to the scientific interpretation of the simulation.
 
----
 ## Observation exports
 
 Selected observations are exported as `.npz` files under:
@@ -302,6 +302,47 @@ Each `.npz` file contains:
 - `dbh_grid_physical`: DBH grid in physical units.
 
 The normalized grids are useful for numerical consistency, while the physical grids are useful for biological interpretation and plotting.
+
+## Observation plotting
+
+A plotting module has been introduced:
+
+    pydynamicforest/plotting.py
+
+It provides reusable functions to generate figures from exported observations.
+
+The current standard figures are:
+
+- 2D density field;
+- marginal height distribution;
+- marginal DBH distribution.
+
+A user-facing script is available:
+
+    scripts/plot_observations.py
+
+It loads exported observation `.npz` files and generates figures without rerunning the simulation.
+
+Typical command:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
+
+By default, this reads observations from:
+
+    outputs/baseline_reduced_sparse/observations/
+
+and writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/
+
+This separates:
+
+- simulation;
+- observation export;
+- observation loading;
+- plotting.
+
+The plotting functions are reusable and can later be called from other scripts, notebooks or scenario-specific workflows.
 
 ## Mass conventions
 
@@ -336,8 +377,6 @@ Time series now include both:
 
 This makes exported results easier to compare with the legacy implementation while preserving a cleaner diagnostic convention.
 
----
-
 ## Quadrature utilities
 
 Quadrature utilities have been centralized in:
@@ -353,8 +392,6 @@ This includes:
 This avoids duplicating quadrature logic across initial condition construction and diagnostics.
 
 The current preferred convention for scientific diagnostics is the 2D trapezoidal rule.
-
----
 
 ## Important limitation
 
@@ -375,8 +412,6 @@ Other current limitations include:
 - alternative growth and status definitions remain to be explored;
 - scenario management is still minimal.
 
----
-
 ## Tests
 
 The current test suite checks:
@@ -393,6 +428,8 @@ The current test suite checks:
 - sparse simulation against dense simulation;
 - structured exports;
 - observation selection by stand age;
+- observation export and loading;
+- plotting utilities;
 - short legacy reference regression.
 
 Tests can be run with:
@@ -408,8 +445,6 @@ To run only slow tests:
 To run all tests, including slow tests:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "slow or not slow"
-
----
 
 ## Slow regression test
 
@@ -429,8 +464,6 @@ This test is marked with:
     @pytest.mark.slow
 
 and is therefore not run by default.
-
----
 
 ## Scripts
 
@@ -475,7 +508,19 @@ The comparison currently checks:
 - final legacy mass;
 - minimum density over the trajectory.
 
----
+### Observation plotting
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
+
+This script reads exported observations and generates figures for each observation.
+
+By default, it reads from:
+
+    outputs/baseline_reduced_sparse/observations/
+
+and writes to:
+
+    outputs/baseline_reduced_sparse/figures/
 
 ## Environment and reproducibility
 
@@ -495,8 +540,6 @@ The package currently depends on:
 - scipy;
 - matplotlib;
 - pytest.
-
----
 
 ## Useful commands
 
@@ -520,7 +563,9 @@ Compare the sparse refactored solver with the reduced legacy reference:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
 
----
+Plot exported observations:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations
 
 ## Current validation status
 
@@ -533,8 +578,6 @@ The sparse solver reproduces the reduced legacy reference case up to numerical p
 
 For the reduced reference case, the observed discrepancies are at or near machine precision.
 
----
-
 ## Documentation files
 
 The current documentation files are:
@@ -543,24 +586,22 @@ The current documentation files are:
 - `README_refactor.md`: technical and conceptual refactor notes;
 - `COMMANDS.md`: command reference for development, tests, scripts and troubleshooting.
 
----
-
 ## Next steps
 
 Recommended next steps:
 
 1. Review whether the reduced full sparse comparison should remain both a manual script and an optional slow regression test.
-2. Continue improving observation export, possibly by exporting selected observed states as `.npz` files.
-3. Further harmonize quadrature rules across diagnostics.
-4. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
-5. Make `sparse` the default solver for practical simulations.
-6. Keep the dense solver available for regression checks on small cases.
-7. Improve the main user-facing `README.md`.
-8. Prepare future scientific extensions:
+2. Continue improving observation export and plotting workflows.
+3. Add higher-level plotting scripts for time series diagnostics.
+4. Further harmonize quadrature rules across diagnostics.
+5. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
+6. Make `sparse` the default solver for practical simulations.
+7. Keep the dense solver available for regression checks on small cases.
+8. Improve scenario configuration and possibly introduce configuration files.
+9. Prepare future scientific extensions:
    - recruitment;
    - alternative mortality laws;
    - alternative growth functions;
    - alternative status definitions;
    - silvicultural or environmental scenarios.
-9. Consider adding configuration files for scenarios.
 10. Consider packaging the project as an installable Python package.
