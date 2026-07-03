@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 import numpy as np
 
 from simulations.baseline.initial_condition import build_initial_condition

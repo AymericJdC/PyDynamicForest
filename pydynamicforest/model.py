@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """
 Model laws and coefficient evaluation for PyDynamicForest.
 

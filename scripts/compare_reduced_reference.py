@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 import re
 from pathlib import Path
 from time import perf_counter

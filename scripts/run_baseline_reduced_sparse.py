@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 from time import perf_counter
 
 from simulations.baseline.initial_condition import build_initial_condition
