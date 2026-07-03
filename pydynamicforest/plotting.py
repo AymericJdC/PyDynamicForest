@@ -20,6 +20,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import LogNorm
 
 
 def ensure_figure_dir(output_dir: str | Path) -> Path:
@@ -31,54 +32,149 @@ def ensure_figure_dir(output_dir: str | Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     return path
 
+def _density_color_limits(
+    arrays: list[np.ndarray],
+    scale: str = "linear",
+    lower_percentile: float = 1.0,
+    upper_percentile: float = 99.0,
+) -> tuple[float, float]:
+    """
+    Compute robust color limits for density heatmaps.
+
+    Parameters
+    ----------
+    arrays:
+        List of density arrays.
+    scale:
+        Either "linear" or "log".
+    lower_percentile:
+        Lower percentile used for robust scaling.
+    upper_percentile:
+        Upper percentile used for robust scaling.
+
+    Returns
+    -------
+    tuple[float, float]
+        vmin and vmax.
+    """
+
+    values = np.concatenate([array.ravel() for array in arrays])
+    values = values[np.isfinite(values)]
+
+    if values.size == 0:
+        return 0.0, 1.0
+
+    if scale == "log":
+        positive_values = values[values > 0.0]
+
+        if positive_values.size == 0:
+            return 1e-15, 1.0
+
+        vmin = float(np.percentile(positive_values, lower_percentile))
+        vmax = float(np.percentile(positive_values, upper_percentile))
+
+        vmin = max(vmin, 1e-15)
+
+    else:
+        vmin = float(np.percentile(values, lower_percentile))
+        vmax = float(np.percentile(values, upper_percentile))
+
+    if vmax <= vmin:
+        vmax = vmin + 1.0
+
+    return vmin, vmax
+
 
 def plot_observation_density(
     observation: dict,
     output_dir: str | Path,
     filename: str | None = None,
+    scale: str = "linear",
+    use_percentile_limits: bool = True,
 ) -> Path:
     """
     Plot the 2D density field U for one exported observation.
 
-    The observation dictionary is typically produced by
-    load_observation_npz(...).
+    Parameters
+    ----------
+    observation:
+        Observation dictionary produced by load_observation_npz(...).
+    output_dir:
+        Directory where the figure will be saved.
+    filename:
+        Optional output filename.
+    scale:
+        Either "linear" or "log".
+    use_percentile_limits:
+        If True, use robust percentile-based color limits.
 
-    Expected keys:
-        - U
-        - age
-        - height_grid_physical
-        - dbh_grid_physical
+    Notes
+    -----
+    DBH is displayed in centimeters for readability.
     """
+
+    if scale not in {"linear", "log"}:
+        raise ValueError("scale must be either 'linear' or 'log'.")
 
     output_path = ensure_figure_dir(output_dir)
 
     U = observation["U"]
     age = observation["age"]
     height = observation["height_grid_physical"]
-    dbh = observation["dbh_grid_physical"]
+    dbh_cm = observation["dbh_grid_physical"] * 100.0
 
     if filename is None:
-        filename = f"density_age_{age:.3f}.png"
+        filename = f"density_age_{age:.3f}_{scale}.png"
 
     figure_path = output_path / filename
 
+    if use_percentile_limits:
+        vmin, vmax = _density_color_limits(
+            [U],
+            scale=scale,
+            lower_percentile=1.0,
+            upper_percentile=99.0,
+        )
+    else:
+        if scale == "log":
+            positive_values = U[U > 0.0]
+            vmin = max(float(np.min(positive_values)), 1e-15)
+            vmax = float(np.max(U))
+        else:
+            vmin = float(np.min(U))
+            vmax = float(np.max(U))
+
     plt.figure(figsize=(6, 5))
-    plt.pcolormesh(
-        dbh,
-        height,
-        U,
-        shading="auto",
-    )
-    plt.colorbar(label="Tree density")
-    plt.xlabel("DBH (m)")
+
+    if scale == "log":
+        mesh = plt.pcolormesh(
+            dbh_cm,
+            height,
+            U,
+            shading="auto",
+            norm=LogNorm(vmin=vmin, vmax=vmax),
+        )
+        colorbar_label = "Tree density, log scale"
+    else:
+        mesh = plt.pcolormesh(
+            dbh_cm,
+            height,
+            U,
+            shading="auto",
+            vmin=vmin,
+            vmax=vmax,
+        )
+        colorbar_label = "Tree density"
+
+    plt.colorbar(mesh, label=colorbar_label)
+    plt.xlabel("DBH (cm)")
     plt.ylabel("Height (m)")
-    plt.title(f"Density field at age {age:.3f}")
+    plt.title(f"Density field at age {age:.1f}")
     plt.tight_layout()
     plt.savefig(figure_path, dpi=150)
     plt.close()
 
     return figure_path
-
 
 def plot_height_distribution_from_observation(
     observation: dict,
@@ -130,7 +226,6 @@ def plot_height_distribution_from_observation(
     plt.close()
 
     return figure_path
-
 
 def plot_dbh_distribution_from_observation(
     observation: dict,
@@ -184,7 +279,6 @@ def plot_dbh_distribution_from_observation(
 
     return figure_path
 
-
 def plot_all_observation_figures(
     observation: dict,
     output_dir: str | Path,
@@ -196,9 +290,15 @@ def plot_all_observation_figures(
     """
 
     return {
-        "density": plot_observation_density(
+        "density_linear": plot_observation_density(
             observation,
             output_dir,
+            scale="linear",
+        ),
+        "density_log": plot_observation_density(
+            observation,
+            output_dir,
+            scale="log",
         ),
         "height_distribution": plot_height_distribution_from_observation(
             observation,
@@ -209,6 +309,7 @@ def plot_all_observation_figures(
             output_dir,
         ),
     }
+
 def plot_time_series_metric(
     time_series: dict,
     metric_key: str,
@@ -330,6 +431,7 @@ def plot_standard_time_series(
         )
 
     return figures
+
 def _normalized_grid_steps(observation: dict) -> tuple[float, float]:
     """
     Return normalized grid steps dx and dy from an observation dictionary.
@@ -350,7 +452,6 @@ def _normalized_grid_steps(observation: dict) -> tuple[float, float]:
 
     return dx, dy
 
-
 def _observation_label(observation: dict) -> str:
     """
     Return a standard label for an observation.
@@ -360,7 +461,6 @@ def _observation_label(observation: dict) -> str:
     step_index = observation["step_index"]
 
     return f"age={age:.3f}, step={step_index}"
-
 
 def plot_height_distributions_comparison(
     observations: list[dict],
@@ -477,33 +577,70 @@ def plot_dbh_distributions_comparison(
 def plot_density_fields_comparison(
     observations: list[dict],
     output_dir: str | Path,
-    filename: str = "density_fields_comparison.png",
+    filename: str | None = None,
     ncols: int = 3,
+    scale: str = "linear",
+    use_shared_color_scale: bool = True,
+    use_percentile_limits: bool = True,
 ) -> Path:
     """
     Plot 2D density fields for several observations in a grid of subplots.
 
-    A common color scale is used across all observations to make visual
-    comparison easier.
+    Parameters
+    ----------
+    observations:
+        List of observation dictionaries.
+    output_dir:
+        Directory where the figure will be saved.
+    filename:
+        Optional output filename.
+    ncols:
+        Number of subplot columns.
+    scale:
+        Either "linear" or "log".
+    use_shared_color_scale:
+        If True, all subplots use the same color scale.
+    use_percentile_limits:
+        If True, use robust percentile-based color limits.
+
+    Notes
+    -----
+    DBH is displayed in centimeters for readability.
     """
 
     if not observations:
         raise ValueError("No observations provided for density comparison.")
 
+    if scale not in {"linear", "log"}:
+        raise ValueError("scale must be either 'linear' or 'log'.")
+
     output_path = ensure_figure_dir(output_dir)
+
+    if filename is None:
+        filename = f"density_fields_comparison_{scale}.png"
+
     figure_path = output_path / filename
 
     n_obs = len(observations)
     ncols = max(1, min(ncols, n_obs))
     nrows = int(np.ceil(n_obs / ncols))
 
-    vmax = max(float(np.max(observation["U"])) for observation in observations)
-    vmin = min(float(np.min(observation["U"])) for observation in observations)
+    density_arrays = [observation["U"] for observation in observations]
+
+    if use_shared_color_scale:
+        vmin, vmax = _density_color_limits(
+            density_arrays,
+            scale=scale,
+            lower_percentile=1.0,
+            upper_percentile=99.0,
+        )
+    else:
+        vmin, vmax = None, None
 
     fig, axes = plt.subplots(
         nrows=nrows,
         ncols=ncols,
-        figsize=(5 * ncols, 4 * nrows),
+        figsize=(5.2 * ncols, 4.4 * nrows),
         squeeze=False,
     )
 
@@ -517,44 +654,64 @@ def plot_density_fields_comparison(
 
         U = observation["U"]
         height = observation["height_grid_physical"]
-        dbh = observation["dbh_grid_physical"]
+        dbh_cm = observation["dbh_grid_physical"] * 100.0
         age = observation["age"]
-        step_index = observation["step_index"]
 
-        mesh = ax.pcolormesh(
-            dbh,
-            height,
-            U,
-            shading="auto",
-            vmin=vmin,
-            vmax=vmax,
-        )
+        if use_shared_color_scale:
+            local_vmin, local_vmax = vmin, vmax
+        else:
+            local_vmin, local_vmax = _density_color_limits(
+                [U],
+                scale=scale,
+                lower_percentile=1.0,
+                upper_percentile=99.0,
+            )
+
+        if scale == "log":
+            mesh = ax.pcolormesh(
+                dbh_cm,
+                height,
+                U,
+                shading="auto",
+                norm=LogNorm(vmin=local_vmin, vmax=local_vmax),
+            )
+        else:
+            mesh = ax.pcolormesh(
+                dbh_cm,
+                height,
+                U,
+                shading="auto",
+                vmin=local_vmin,
+                vmax=local_vmax,
+            )
 
         last_mesh = mesh
 
-        ax.set_xlabel("DBH (m)")
+        ax.set_xlabel("DBH (cm)")
         ax.set_ylabel("Height (m)")
-        ax.set_title(f"Age {age:.3f}, step {step_index}")
+        ax.set_title(f"Age {age:.1f}")
 
-    # Hide unused axes if the grid is larger than the number of observations.
     for index in range(n_obs, nrows * ncols):
         row = index // ncols
         col = index % ncols
         axes[row, col].axis("off")
 
+    colorbar_label = "Tree density"
+    if scale == "log":
+        colorbar_label = "Tree density, log scale"
+
     if last_mesh is not None:
         fig.colorbar(
             last_mesh,
             ax=axes.ravel().tolist(),
-            label="Tree density",
-            shrink=0.9,
+            label=colorbar_label,
+            shrink=0.85,
         )
 
-
-    fig.suptitle("Density fields across observations")
+    fig.suptitle(f"Density fields across observations ({scale} scale)")
 
     fig.subplots_adjust(
-        top=0.88,
+        top=0.86,
         right=0.88,
         wspace=0.35,
         hspace=0.35,
@@ -563,9 +720,7 @@ def plot_density_fields_comparison(
     fig.savefig(figure_path, dpi=150)
     plt.close(fig)
 
-
     return figure_path
-
 
 def plot_all_observation_comparison_figures(
     observations: list[dict],
@@ -586,8 +741,14 @@ def plot_all_observation_comparison_figures(
             observations,
             output_dir,
         ),
-        "density_fields": plot_density_fields_comparison(
+        "density_fields_linear": plot_density_fields_comparison(
             observations,
             output_dir,
+            scale="linear",
+        ),
+        "density_fields_log": plot_density_fields_comparison(
+            observations,
+            output_dir,
+            scale="log",
         ),
     }

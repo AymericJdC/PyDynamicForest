@@ -83,7 +83,8 @@ def test_plot_all_observation_figures_creates_expected_files(tmp_path):
     )
 
     assert set(figures.keys()) == {
-        "density",
+        "density_linear",
+        "density_log",
         "height_distribution",
         "dbh_distribution",
     }
@@ -209,7 +210,8 @@ def test_plot_all_observation_comparison_figures_creates_expected_files(tmp_path
     assert set(figures.keys()) == {
         "height_distributions",
         "dbh_distributions",
-        "density_fields",
+        "density_fields_linear",
+        "density_fields_log",
     }
 
     for figure_path in figures.values():
