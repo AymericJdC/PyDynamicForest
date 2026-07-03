@@ -15,6 +15,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from pydynamicforest.types import SimulationResults
 
 
@@ -251,10 +253,60 @@ def save_summary_txt(
     return summary_path
 
 
+def save_observations_npz(
+    results: SimulationResults,
+    output_dir: str | Path,
+    dirname: str = "observations",
+) -> list:
+    """
+    Save selected model observations as NPZ files.
+
+    In PyDynamicForest, an observation is a simulated model state selected
+    for storage and analysis at a requested stand age.
+
+    Each NPZ file contains:
+        - U
+        - time
+        - age
+        - step_index
+        - height_grid
+        - dbh_grid
+    """
+
+    output_path = ensure_output_dir(output_dir)
+    observations_dir = ensure_output_dir(output_path / dirname)
+
+    files: list[Path] = []
+
+    height_grid = results.parameters.numerics.grid.x
+    dbh_grid = results.parameters.numerics.grid.y
+
+    for observation in results.observations:
+        filename = (
+            f"observation_step_{observation.step_index:04d}"
+            f"_age_{observation.age:.3f}.npz"
+        )
+
+        file_path = observations_dir / filename
+
+        np.savez(
+            file_path,
+            U=observation.U,
+            time=observation.time,
+            age=observation.age,
+            step_index=observation.step_index,
+            height_grid=height_grid,
+            dbh_grid=dbh_grid,
+        )
+
+        files.append(file_path)
+
+    return files
+
 def save_simulation_results(
     results: SimulationResults,
     output_dir: str | Path,
-) -> dict[str, Path]:
+) -> dict[str, Path | list[Path]]:
     """
     Save the main outputs of a SimulationResults object.
 
@@ -263,10 +315,11 @@ def save_simulation_results(
 
     output_path = ensure_output_dir(output_dir)
 
-    files = {
+    files: dict[str, Path | list[Path]] = {
         "time_series": save_time_series_csv(results, output_path),
         "metadata": save_metadata_json(results, output_path),
         "summary": save_summary_txt(results, output_path),
+        "observations": save_observations_npz(results, output_path),
     }
 
     return files
