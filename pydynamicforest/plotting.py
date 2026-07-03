@@ -208,3 +208,124 @@ def plot_all_observation_figures(
             output_dir,
         ),
     }
+def plot_time_series_metric(
+    time_series: dict,
+    metric_key: str,
+    output_dir: str | Path,
+    x_key: str = "age",
+    y_label: str | None = None,
+    title: str | None = None,
+    filename: str | None = None,
+) -> Path:
+    """
+    Plot one time series metric.
+
+    Parameters
+    ----------
+    time_series:
+        Dictionary containing time series arrays or lists.
+    metric_key:
+        Key of the metric to plot.
+    output_dir:
+        Directory where the figure will be saved.
+    x_key:
+        Key used for the x-axis, typically "age" or "time".
+    """
+
+    output_path = ensure_figure_dir(output_dir)
+
+    x = np.asarray(time_series[x_key], dtype=float)
+    y = np.asarray(time_series[metric_key], dtype=float)
+
+    if y_label is None:
+        y_label = metric_key
+
+    if title is None:
+        title = metric_key.replace("_", " ").title()
+
+    if filename is None:
+        filename = f"{metric_key}_vs_{x_key}.png"
+
+    figure_path = output_path / filename
+
+    plt.figure(figsize=(6, 4))
+    plt.plot(x, y)
+    plt.xlabel(x_key.replace("_", " ").title())
+    plt.ylabel(y_label)
+    plt.title(title)
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(figure_path, dpi=150)
+    plt.close()
+
+    return figure_path
+
+def plot_standard_time_series(
+    time_series: dict,
+    output_dir: str | Path,
+    x_key: str = "age",
+) -> dict[str, Path]:
+    """
+    Plot the standard PyDynamicForest time series diagnostics.
+
+    Expected keys include:
+        - total_mass
+        - legacy_mass
+        - minimum_density
+        - top_height
+        - basal_area
+    """
+
+    figures = {}
+
+    if "total_mass" in time_series:
+        figures["total_mass"] = plot_time_series_metric(
+            time_series,
+            metric_key="total_mass",
+            output_dir=output_dir,
+            x_key=x_key,
+            y_label="Total mass",
+            title="Total mass",
+        )
+
+    if "legacy_mass" in time_series:
+        figures["legacy_mass"] = plot_time_series_metric(
+            time_series,
+            metric_key="legacy_mass",
+            output_dir=output_dir,
+            x_key=x_key,
+            y_label="Legacy mass",
+            title="Legacy mass",
+        )
+
+    if "minimum_density" in time_series:
+        figures["minimum_density"] = plot_time_series_metric(
+            time_series,
+            metric_key="minimum_density",
+            output_dir=output_dir,
+            x_key=x_key,
+            y_label="Minimum density",
+            title="Minimum density",
+        )
+
+    if "top_height" in time_series:
+        figures["top_height"] = plot_time_series_metric(
+            time_series,
+            metric_key="top_height",
+            output_dir=output_dir,
+            x_key=x_key,
+            y_label="Top height (m)",
+            title="Top height",
+        )
+
+    if "basal_area" in time_series:
+        figures["basal_area"] = plot_time_series_metric(
+            time_series,
+            metric_key="basal_area",
+            output_dir=output_dir,
+            x_key=x_key,
+            y_label="Basal area (m²/ha)",
+            title="Basal area",
+        )
+
+    return figures
