@@ -47,6 +47,13 @@ def test_sparse_short_simulation_matches_dense_short_simulation():
     )
 
     assert np.allclose(
+        dense_results.time_series.legacy_mass,
+        sparse_results.time_series.legacy_mass,
+        rtol=1e-10,
+        atol=1e-10,
+    )
+
+    assert np.allclose(
         dense_results.time_series.top_height,
         sparse_results.time_series.top_height,
         rtol=1e-10,
@@ -59,3 +66,4 @@ def test_sparse_short_simulation_matches_dense_short_simulation():
         rtol=1e-10,
         atol=1e-10,
     )
+    

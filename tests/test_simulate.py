@@ -21,6 +21,7 @@ def test_simulate_runs_short_baseline():
     assert len(results.time_series.times) == 4
     assert len(results.time_series.ages) == 4
     assert len(results.time_series.total_mass) == 4
+    assert len(results.time_series.legacy_mass) == 4
     assert len(results.time_series.top_height) == 4
     assert len(results.time_series.basal_area) == 4
 

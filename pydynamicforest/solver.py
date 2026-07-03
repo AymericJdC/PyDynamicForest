@@ -637,6 +637,7 @@ def simulate(
         time_series.times.append(current_state.time)
         time_series.ages.append(current_state.age)
         time_series.total_mass.append(diagnostics["total_mass"])
+        time_series.legacy_mass.append(diagnostics["legacy_mass"])
         time_series.minimum_density.append(diagnostics["minimum_density"])
         time_series.top_height.append(diagnostics["top_height"])
         time_series.basal_area.append(diagnostics["basal_area"])

@@ -264,6 +264,7 @@ class TimeSeries:
     times: list[float] = field(default_factory=list)
     ages: list[float] = field(default_factory=list)
     total_mass: list[float] = field(default_factory=list)
+    legacy_mass: list[float] = field(default_factory=list)
     top_height: list[float] = field(default_factory=list)
     basal_area: list[float] = field(default_factory=list)
     minimum_density: list[float] = field(default_factory=list)

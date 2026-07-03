@@ -201,6 +201,7 @@ def state_diagnostics(state: State, p: Parameters) -> dict[str, float]:
         "time": state.time,
         "age": state.age,
         "total_mass": total_mass(state.U, p),
+        "legacy_mass": legacy_mass(state.U, p),
         "minimum_density": minimum_density(state.U),
         "top_height": top_height(state.U, p),
         "basal_area": basal_area(state.U, p),

@@ -58,6 +58,7 @@ def save_time_series_csv(
                 "time",
                 "age",
                 "total_mass",
+                "legacy_mass",
                 "minimum_density",
                 "top_height",
                 "basal_area",
@@ -68,6 +69,7 @@ def save_time_series_csv(
             ts.times,
             ts.ages,
             ts.total_mass,
+            ts.legacy_mass,
             ts.minimum_density,
             ts.top_height,
             ts.basal_area,
@@ -218,6 +220,8 @@ def save_summary_txt(
 
         if ts.total_mass:
             f.write(f"total_mass        = {ts.total_mass[-1]}\n")
+        if ts.legacy_mass:
+            f.write(f"legacy_mass      = {ts.legacy_mass[-1]}\n")
         if ts.minimum_density:
             f.write(f"minimum_density   = {ts.minimum_density[-1]}\n")
         if ts.top_height:

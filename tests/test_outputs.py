@@ -27,7 +27,7 @@ def test_save_simulation_results_creates_expected_files(tmp_path):
     metadata_content = files["metadata"].read_text(encoding="utf-8")
     summary_content = files["summary"].read_text(encoding="utf-8")
 
-    assert "time,age,total_mass" in time_series_content
+    assert "time,age,total_mass,legacy_mass" in time_series_content
     assert "baseline_gaussian_initial_condition" in metadata_content
     assert "PyDynamicForest simulation summary" in summary_content
 
