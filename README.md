@@ -215,4 +215,8 @@ This work was supported by the interdisciplinary program ARTEMIS of Lorraine Uni
 
 ## License
 
-Please refer to the repository license file if available.
+PyDynamicForest is distributed under the GNU Lesser General Public License v3.0 or later.
+
+SPDX-License-Identifier: LGPL-3.0-or-later
+
+This license allows PyDynamicForest to be used as a library by other software, including software distributed under different licenses, while requiring modifications to PyDynamicForest itself to remain available under the same LGPL terms.
