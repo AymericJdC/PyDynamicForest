@@ -331,3 +331,68 @@ def save_simulation_results(
     }
 
     return files
+
+def load_observation_npz(path: str | Path) -> dict:
+    """
+    Load a single exported observation NPZ file.
+
+    Returns a dictionary containing:
+        - U
+        - time
+        - age
+        - step_index
+        - height_grid
+        - dbh_grid
+        - height_grid_physical
+        - dbh_grid_physical
+        - path
+    """
+
+    file_path = Path(path)
+
+    if not file_path.exists():
+        raise FileNotFoundError(f"Observation file not found: {file_path}")
+
+    data = np.load(file_path)
+
+    return {
+        "U": data["U"],
+        "time": float(data["time"]),
+        "age": float(data["age"]),
+        "step_index": int(data["step_index"]),
+        "height_grid": data["height_grid"],
+        "dbh_grid": data["dbh_grid"],
+        "height_grid_physical": data["height_grid_physical"],
+        "dbh_grid_physical": data["dbh_grid_physical"],
+        "path": file_path,
+    }
+
+
+def load_observations_npz_dir(
+    output_dir: str | Path,
+    dirname: str = "observations",
+) -> list:
+    """
+    Load all exported observation NPZ files from an output directory.
+
+    Observations are returned sorted by step_index.
+    """
+
+    output_path = Path(output_dir)
+    observations_dir = output_path / dirname
+
+    if not observations_dir.exists():
+        raise FileNotFoundError(
+            f"Observations directory not found: {observations_dir}"
+        )
+
+    files = sorted(observations_dir.glob("observation_*.npz"))
+
+    observations = [
+        load_observation_npz(file_path)
+        for file_path in files
+    ]
+
+    observations.sort(key=lambda obs: obs["step_index"])
+
+    return observations
