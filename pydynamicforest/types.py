@@ -201,7 +201,7 @@ class OutputSpecification:
     Specification of outputs requested from the simulation.
     """
 
-    snapshot_ages: list[float] = field(default_factory=list)
+    observation_ages: list[float] = field(default_factory=list)
     save_full_trajectory: bool = True
     compute_time_series: bool = True
     save_figures: bool = False
@@ -280,7 +280,7 @@ class SimulationResults:
     parameters: Parameters
     context: SimulationContext
     final_state: State
-    snapshots: list[State] = field(default_factory=list)
+    observations: list[State] = field(default_factory=list)
     time_series: TimeSeries = field(default_factory=TimeSeries)
     diagnostics: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)

@@ -142,7 +142,7 @@ def save_metadata_json(
             "name": results.context.name,
             "initial_age": results.context.initial_age,
             "final_age": results.context.final_age,
-            "snapshot_ages": results.context.output.snapshot_ages,
+            "observation_ages": results.context.output.observation_ages,
         },
         "run_metadata": results.metadata,
         "final_state": {
@@ -151,18 +151,18 @@ def save_metadata_json(
             "age": results.final_state.age,
             "shape": list(results.final_state.U.shape),
         },
-        "snapshots": {
-            "number": len(results.snapshots),
-            "requested_ages": results.context.output.snapshot_ages,
+        "observations": {
+            "number": len(results.observations),
+            "requested_ages": results.context.output.observation_ages,
             "save_full_trajectory": results.context.output.save_full_trajectory,
             "saved": [
                 {
-                    "step_index": snapshot.step_index,
-                    "time": snapshot.time,
-                    "age": snapshot.age,
-                    "shape": list(snapshot.U.shape),
+                    "step_index": observation.step_index,
+                    "time": observation.time,
+                    "age": observation.age,
+                    "shape": list(observation.U.shape),
                 }
-                for snapshot in results.snapshots
+                for observation in results.observations
             ],
         },
     }
@@ -229,24 +229,24 @@ def save_summary_txt(
         if ts.basal_area:
             f.write(f"basal_area        = {ts.basal_area[-1]}\n")
         
-        f.write("\nSnapshots\n")
+        f.write("\nObservations\n")
         f.write("---------\n")
-        f.write(f"number              = {len(results.snapshots)}\n")
+        f.write(f"number              = {len(results.observations)}\n")
         f.write(
             f"requested_ages      = "
-            f"{results.context.output.snapshot_ages}\n"
+            f"{results.context.output.observation_ages}\n"
         )
         f.write(
             f"save_full_trajectory = "
             f"{results.context.output.save_full_trajectory}\n"
         )
 
-        for snapshot in results.snapshots:
+        for observation in results.observations:
             f.write(
-                f"step={snapshot.step_index}, "
-                f"time={snapshot.time}, "
-                f"age={snapshot.age}, "
-                f"shape={snapshot.U.shape}\n"
+                f"step={observation.step_index}, "
+                f"time={observation.time}, "
+                f"age={observation.age}, "
+                f"shape={observation.U.shape}\n"
             )
     return summary_path
 

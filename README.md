@@ -68,11 +68,11 @@ Compare the sparse refactored solver with the reduced legacy reference using:
 
 The comparison checks final top height, final basal area, final legacy mass, and minimum density over the trajectory.
 
-## Snapshot management
+## Observation management
 
-The simulation context supports snapshot selection by stand age.
+The simulation context supports observation selection by stand age.
 
-Example: `snapshot_ages` can be set to 18.0, 45.0, and 69.0 with `save_full_trajectory` set to `False`.
+Example: `observation_ages` can be set to 18.0, 45.0, and 69.0 with `save_full_trajectory` set to `False`.
 
 This avoids hard-coded indices such as:
 

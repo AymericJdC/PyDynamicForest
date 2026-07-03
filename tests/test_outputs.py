@@ -31,5 +31,5 @@ def test_save_simulation_results_creates_expected_files(tmp_path):
     assert "baseline_gaussian_initial_condition" in metadata_content
     assert "PyDynamicForest simulation summary" in summary_content
 
-    assert "snapshots" in metadata_content.lower()
-    assert "Snapshots" in summary_content
+    assert "observations" in metadata_content.lower()
+    assert "Observations" in summary_content

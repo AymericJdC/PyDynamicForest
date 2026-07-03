@@ -381,8 +381,8 @@ Recommended next steps:
 
 1. Add a pytest marker for long or slow tests.
 2. Decide whether the reduced full sparse comparison should remain a manual script or become an optional regression test.
-3. Improve snapshot management using `OutputSpecification.snapshot_ages`.
-4. Avoid storing the full trajectory by default when only selected snapshots are needed.
+3. Improve observation management using `OutputSpecification.observation_ages`.
+4. Avoid storing the full trajectory by default when only selected observations are needed.
 5. Harmonize quadrature rules across diagnostics.
 6. Clarify the distinction between:
    - legacy mass;

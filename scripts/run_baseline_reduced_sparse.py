@@ -49,15 +49,15 @@ def main() -> None:
     print(f"  top_height        = {results.time_series.top_height[-1]}")
     print(f"  basal_area        = {results.time_series.basal_area[-1]}")
     print()
-    print("Saved snapshots:")
-    print(f"  number of snapshots = {len(results.snapshots)}")
+    print("Saved observations:")
+    print(f"  number of observations = {len(results.observations)}")
 
-    for snapshot in results.snapshots:
+    for observation in results.observations:
         print(
-            f"  step={snapshot.step_index:4d}, "
-            f"time={snapshot.time:.6f}, "
-            f"age={snapshot.age:.6f}, "
-            f"shape={snapshot.U.shape}"
+            f"  step={observation.step_index:4d}, "
+            f"time={observation.time:.6f}, "
+            f"age={observation.age:.6f}, "
+            f"shape={observation.U.shape}"
         )
 
     print()

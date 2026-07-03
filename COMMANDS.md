@@ -98,13 +98,13 @@ C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "
 ### Run a specific test file
 
 ```bat
-C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_snapshots.py
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_observations.py
 ```
 
 ### Run a specific test by name
 
 ```bat
-C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -k "snapshot"
+C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -k "observation"
 ```
 
 ---
@@ -251,18 +251,18 @@ The dense solver is kept as a regression reference.
 
 The sparse solver is preferred for practical simulations.
 
-### Snapshot management
+### Observation management
 
-Snapshots can be requested through the simulation context:
+Observations can be requested through the simulation context:
 
 ```python
 OutputSpecification(
-    snapshot_ages=[18.0, 45.0, 69.0],
+    observation_ages=[18.0, 45.0, 69.0],
     save_full_trajectory=False,
 )
 ```
 
-When `save_full_trajectory` is `False`, only states close to the requested stand ages are stored in `results.snapshots`.
+When `save_full_trajectory` is `False`, only states close to the requested stand ages are stored in `results.observations`.
 
 ---
 

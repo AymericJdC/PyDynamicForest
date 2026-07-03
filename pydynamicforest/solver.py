@@ -546,27 +546,27 @@ def advance_one_step_sparse_legacy(
     )
 
 
-def should_save_snapshot(
+def should_save_observation(
     state: State,
     c: SimulationContext,
     age_tolerance: float,
 ) -> bool:
     """
-    Decide whether a State should be saved as a snapshot.
+    Decide whether a State should be saved as a observation.
 
-    A snapshot is saved if the state age is close to one of the requested
-    snapshot ages defined in c.output.snapshot_ages.
+    A observation is saved if the state age is close to one of the requested
+    observation ages defined in c.output.observation_ages.
 
     This avoids hard-coded time indices and allows users to reason in terms
     of stand age.
     """
 
-    if not c.output.snapshot_ages:
+    if not c.output.observation_ages:
         return False
 
     return any(
         abs(state.age - requested_age) <= age_tolerance
-        for requested_age in c.output.snapshot_ages
+        for requested_age in c.output.observation_ages
     )
 
 
@@ -623,7 +623,7 @@ def simulate(
     if max_steps is not None:
         n_steps = min(n_steps, max_steps)
 
-    snapshots: list[State] = []
+    observations: list[State] = []
     time_series = TimeSeries()
     diagnostics_messages: list[str] = []
 
@@ -644,12 +644,12 @@ def simulate(
 
         age_tolerance = 0.5 * p.numerics.time.dt
 
-        if c.output.save_full_trajectory or should_save_snapshot(
+        if c.output.save_full_trajectory or should_save_observation(
             current_state,
             c,
             age_tolerance=age_tolerance,
         ):
-            snapshots.append(current_state)
+            observations.append(current_state)
 
     record_state(state)
 
@@ -670,7 +670,7 @@ def simulate(
         parameters=p,
         context=c,
         final_state=state,
-        snapshots=snapshots,
+        observations=observations,
         time_series=time_series,
         diagnostics=diagnostics_messages,
         metadata=metadata,
