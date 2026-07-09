@@ -380,6 +380,15 @@ Therefore, the validated numerical behavior remains unchanged by default.
 
 The `"state"` mode is currently preparatory. It allows the solver infrastructure to be progressively migrated toward state-aware model laws, but should be used carefully because future dependencies on `U`, derived quantities or context may change the mathematical and numerical interpretation of the scheme.
 
+For the current baseline laws, tests verify that the `"legacy"` and `"state"` model-field evaluation modes produce identical coefficient fields for:
+
+- diffusion;
+- mortality;
+- height growth;
+- DBH growth.
+
+This equivalence test provides a guard before any future migration of the solver toward the state-aware pathway.
+
 Future state-dependent laws are expected to be introduced first as explicit dependencies on the current state `U^n`, before considering fully implicit nonlinear solves involving `U^{n+1}`.
 
 ## Sparse solver validation
