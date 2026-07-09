@@ -24,7 +24,7 @@ from pydynamicforest.types import (
 )
 
 
-def build_parameters() -> Parameters:
+def build_parameters(config: dict | None = None) -> Parameters:
     """
     Build baseline model and numerical parameters.
 
@@ -32,11 +32,14 @@ def build_parameters() -> Parameters:
     case, but uses the sparse legacy-like solver by default.
     """
 
-    scale_cfg = BASELINE_CONFIG["physical_scales"]
-    grid_cfg = BASELINE_CONFIG["grid"]
-    time_cfg = BASELINE_CONFIG["time"]
-    model_cfg = BASELINE_CONFIG["model"]
-    solver_cfg = BASELINE_CONFIG["solver"]
+    if config is None:
+        config = BASELINE_CONFIG
+
+    scale_cfg = config["physical_scales"]
+    grid_cfg = config["grid"]
+    time_cfg = config["time"]
+    model_cfg = config["model"]
+    solver_cfg = config["solver"]
 
     # ------------------------------------------------------------------
     # Physical scales
@@ -187,6 +190,6 @@ def build_parameters() -> Parameters:
     return Parameters(
         model=model,
         numerics=numerics,
-        name=BASELINE_CONFIG["name"],
-        description=BASELINE_CONFIG["description"],
+        name=config["name"],
+        description=config["description"],
     )

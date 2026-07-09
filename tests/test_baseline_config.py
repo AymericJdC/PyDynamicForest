@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-from simulations.baseline.config import BASELINE_CONFIG
+from simulations.baseline.config import BASELINE_CONFIG, copy_baseline_config
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
@@ -129,3 +129,63 @@ def test_baseline_configured_simulation_runs_short():
     assert results.metadata["solver"] == "sparse_legacy"
     assert results.metadata["matrix_storage"] == "sparse"
     assert results.metadata["solver_requested"] is None
+
+def test_copy_baseline_config_returns_independent_copy():
+    config = copy_baseline_config()
+
+    config["grid"]["nx"] = 10
+    config["output"]["observation_ages"].append(999.0)
+
+    assert BASELINE_CONFIG["grid"]["nx"] == 20
+    assert BASELINE_CONFIG["output"]["observation_ages"] == [18.0, 45.0, 69.0]
+
+    assert config["grid"]["nx"] == 10
+    assert config["output"]["observation_ages"] == [18.0, 45.0, 69.0, 999.0]
+
+
+def test_baseline_builders_accept_custom_config():
+    config = copy_baseline_config()
+
+    config["name"] = "baseline_custom_test"
+    config["grid"]["nx"] = 10
+    config["grid"]["ny"] = 12
+    config["time"]["n_steps"] = 5
+    config["output"]["observation_ages"] = [18.0, 20.0]
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    assert x0.name == config["initial_condition"]["name"]
+    assert p.name == "baseline_custom_test"
+    assert p.numerics.grid.nx == 10
+    assert p.numerics.grid.ny == 12
+    assert p.numerics.time.n_steps == 5
+    assert c.name == "baseline_custom_test_context"
+    assert c.output.observation_ages == [18.0, 20.0]
+
+def test_custom_config_simulation_runs_short():
+    config = copy_baseline_config()
+
+    config["name"] = "baseline_custom_short_test"
+    config["grid"]["nx"] = 10
+    config["grid"]["ny"] = 10
+    config["time"]["n_steps"] = 5
+    config["time"]["t_end"] = 1.0
+    config["ages"]["final_age"] = 19.0
+    config["output"]["observation_ages"] = [18.0, 19.0]
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert results.metadata["solver"] == "sparse_legacy"
+    assert results.metadata["matrix_storage"] == "sparse"

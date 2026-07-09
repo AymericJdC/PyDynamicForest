@@ -15,7 +15,7 @@ from simulations.baseline.config import BASELINE_CONFIG
 from pydynamicforest.types import InitialCondition
 
 
-def build_initial_condition() -> InitialCondition:
+def build_initial_condition(config: dict | None = None) -> InitialCondition:
     """
     Build the baseline Gaussian initial condition.
 
@@ -28,8 +28,11 @@ def build_initial_condition() -> InitialCondition:
     when the continuous initial condition is discretized on the numerical grid.
     """
 
-    ages_cfg = BASELINE_CONFIG["ages"]
-    ic_cfg = BASELINE_CONFIG["initial_condition"]
+    if config is None:
+        config = BASELINE_CONFIG
+
+    ages_cfg = config["ages"]
+    ic_cfg = config["initial_condition"]
 
     return InitialCondition(
         name=ic_cfg["name"],

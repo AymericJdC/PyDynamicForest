@@ -15,7 +15,7 @@ from simulations.baseline.config import BASELINE_CONFIG
 from pydynamicforest.types import OutputSpecification, SimulationContext
 
 
-def build_context() -> SimulationContext:
+def build_context(config: dict | None = None) -> SimulationContext:
     """
     Build the baseline simulation context.
 
@@ -27,8 +27,11 @@ def build_context() -> SimulationContext:
     at every time step.
     """
 
-    ages_cfg = BASELINE_CONFIG["ages"]
-    output_cfg = BASELINE_CONFIG["output"]
+    if config is None:
+        config = BASELINE_CONFIG
+
+    ages_cfg = config["ages"]
+    output_cfg = config["output"]
 
     output = OutputSpecification(
         observation_ages=output_cfg["observation_ages"],
@@ -39,7 +42,7 @@ def build_context() -> SimulationContext:
     )
 
     return SimulationContext(
-        name=f"{BASELINE_CONFIG['name']}_context",
+        name=f"{config['name']}_context",
         initial_age=ages_cfg["initial_age"],
         final_age=ages_cfg["final_age"],
         output=output,

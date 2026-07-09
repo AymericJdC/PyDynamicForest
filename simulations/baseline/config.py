@@ -10,6 +10,7 @@ The goal is not yet to provide a fully generic configuration system, but to
 avoid scattering core scenario values across several files.
 """
 
+from copy import deepcopy
 
 BASELINE_CONFIG = {
     "name": "baseline_reduced",
@@ -121,3 +122,13 @@ BASELINE_CONFIG = {
         "save_tables": False,
     },
 }
+
+def copy_baseline_config() -> dict:
+    """
+    Return a deep copy of the baseline configuration.
+
+    This is useful for creating scenario variants without mutating
+    the global baseline configuration.
+    """
+
+    return deepcopy(BASELINE_CONFIG)
