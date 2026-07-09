@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
+from argparse import Namespace
+
+from scripts.run_baseline import apply_cli_overrides
+
 from simulations.baseline.config import BASELINE_CONFIG, copy_baseline_config
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
@@ -189,3 +193,26 @@ def test_custom_config_simulation_runs_short():
     assert results.final_state.step_index == 2
     assert results.metadata["solver"] == "sparse_legacy"
     assert results.metadata["matrix_storage"] == "sparse"
+
+def test_run_baseline_apply_cli_overrides():
+    config = copy_baseline_config()
+
+    args = Namespace(
+        nx=11,
+        ny=13,
+        n_steps=17,
+        t_end=8.0,
+        initial_age=None,
+        final_age=None,
+        observation_ages=[18.0, 22.0, 26.0],
+    )
+
+    updated = apply_cli_overrides(config, args)
+
+    assert updated["grid"]["nx"] == 11
+    assert updated["grid"]["ny"] == 13
+    assert updated["time"]["n_steps"] == 17
+    assert updated["time"]["t_end"] == 8.0
+    assert updated["ages"]["initial_age"] == 18.0
+    assert updated["ages"]["final_age"] == 26.0
+    assert updated["output"]["observation_ages"] == [18.0, 22.0, 26.0]

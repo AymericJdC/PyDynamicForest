@@ -14,15 +14,16 @@ Run the full reduced baseline:
 
     python -m scripts.run_baseline --full --output-dir outputs/baseline_reduced_sparse
 
-Force a solver explicitly, for debugging or regression checks:
+Modify selected configuration values from the command line:
 
-    python -m scripts.run_baseline --max-steps 10 --solver-name dense
+    python -m scripts.run_baseline --nx 10 --ny 10 --n-steps 20 --max-steps 5
 """
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from time import perf_counter
 
+from simulations.baseline.config import copy_baseline_config
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
@@ -76,16 +77,130 @@ def build_parser() -> ArgumentParser:
         ),
     )
 
+    # ------------------------------------------------------------------
+    # Optional configuration overrides
+    # ------------------------------------------------------------------
+
+    parser.add_argument(
+        "--nx",
+        type=int,
+        default=None,
+        help="Override the number of grid points in the height direction.",
+    )
+
+    parser.add_argument(
+        "--ny",
+        type=int,
+        default=None,
+        help="Override the number of grid points in the DBH direction.",
+    )
+
+    parser.add_argument(
+        "--n-steps",
+        type=int,
+        default=None,
+        help="Override the total number of time steps in the configuration.",
+    )
+
+    parser.add_argument(
+        "--t-end",
+        type=float,
+        default=None,
+        help="Override the final simulation time.",
+    )
+
+    parser.add_argument(
+        "--initial-age",
+        type=float,
+        default=None,
+        help="Override the initial stand age.",
+    )
+
+    parser.add_argument(
+        "--final-age",
+        type=float,
+        default=None,
+        help="Override the final stand age.",
+    )
+
+    parser.add_argument(
+        "--observation-ages",
+        type=float,
+        nargs="+",
+        default=None,
+        help=(
+            "Override requested observation ages. "
+            "Example: --observation-ages 18 30 45 69"
+        ),
+    )
+
     return parser
+
+
+def apply_cli_overrides(config: dict, args: Namespace) -> dict:
+    """
+    Apply command-line overrides to a baseline configuration copy.
+
+    The input configuration is modified in place and also returned.
+    """
+
+    if args.nx is not None:
+        config["grid"]["nx"] = args.nx
+
+    if args.ny is not None:
+        config["grid"]["ny"] = args.ny
+
+    if args.n_steps is not None:
+        config["time"]["n_steps"] = args.n_steps
+
+    if args.initial_age is not None:
+        config["ages"]["initial_age"] = args.initial_age
+
+    if args.t_end is not None:
+        config["time"]["t_end"] = args.t_end
+
+    if args.final_age is not None:
+        config["ages"]["final_age"] = args.final_age
+    elif args.t_end is not None or args.initial_age is not None:
+        config["ages"]["final_age"] = (
+            config["ages"]["initial_age"] + config["time"]["t_end"]
+        )
+
+    if args.observation_ages is not None:
+        config["output"]["observation_ages"] = args.observation_ages
+
+    return config
+
+
+def print_configuration_summary(config: dict) -> None:
+    """
+    Print a compact summary of the effective scenario configuration.
+    """
+
+    print("Effective scenario configuration:")
+    print(f"  name              = {config['name']}")
+    print(f"  initial_age       = {config['ages']['initial_age']}")
+    print(f"  final_age         = {config['ages']['final_age']}")
+    print(f"  grid              = {config['grid']['nx']} x {config['grid']['ny']}")
+    print(f"  t_start           = {config['time']['t_start']}")
+    print(f"  t_end             = {config['time']['t_end']}")
+    print(f"  n_steps           = {config['time']['n_steps']}")
+    print(f"  matrix_storage    = {config['solver']['matrix_storage']}")
+    print(f"  linear_solver     = {config['solver']['linear_solver']}")
+    print(f"  observation_ages  = {config['output']['observation_ages']}")
+    print()
 
 
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    x0 = build_initial_condition()
-    p = build_parameters()
-    c = build_context()
+    config = copy_baseline_config()
+    config = apply_cli_overrides(config, args)
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
 
     if args.full:
         max_steps = None
@@ -112,6 +227,8 @@ def main() -> None:
     print("Baseline simulation completed.")
     print("==============================")
     print()
+    print_configuration_summary(config)
+
     print("Run configuration:")
     print(f"  output_dir        = {args.output_dir}")
     print(f"  full_run          = {args.full}")
