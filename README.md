@@ -212,6 +212,7 @@ Available configuration override options include:
     --initial-age
     --final-age
     --observation-ages
+    --model-field-evaluation
 
 For example, run a small grid debug simulation with:
 
@@ -224,6 +225,20 @@ Run with custom observation ages:
 Override the simulation horizon:
 
     pydf-run-baseline --preset baseline --t-end 10 --n-steps 20 --max-steps 5 --output-dir outputs\cli_time_override
+
+Select the model-field evaluation mode explicitly:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation legacy --max-steps 5 --output-dir outputs\mfe_legacy_debug
+
+or:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
+The default mode is:
+
+    --model-field-evaluation legacy
+
+The `state` mode is preparatory. It evaluates model fields through the state-aware interface, while the current solver still receives fields in a legacy-compatible format.
 
 These overrides modify a copy of the baseline configuration for the current run only. The file `simulations/baseline/config.py` is not modified.
 
@@ -360,6 +375,8 @@ Quadrature conventions should continue to be harmonized across diagnostics.
 
 The current plotting workflow is functional but still provisional. A future visualization-quality improvement step is planned.
 
+The `state` model-field evaluation mode is available for testing and future model extensions, but the default validated pathway remains `legacy`.
+
 Future scientific extensions such as recruitment, alternative mortality laws, alternative growth functions, alternative status definitions, and nonlinear dependencies on `U` or derived quantities remain to be implemented.
 
 ## Authors and contributors
@@ -370,10 +387,15 @@ This code originates from the IDEAForDynamics project.
 
 - **Aymeric Jacob de Cordemoy** — original Python implementation and initial research code.
 
-### Scientific supervision and refactor
+### Scientific supervision
 
-- **Julien SAINTE-MARIE** — scientific supervision, conceptual restructuring, and current refactor toward a modular research code.
+- **Julien SAINTE-MARIE** — scientific supervision and conceptual restructuring.
 - **Takeo TAKAHASHI** — scientific supervision.
+- **Jean-Daniel Bontemps** — scientific supervision.
+
+### Refactor
+
+- **Julien SAINTE-MARIE** — current refactor toward a modular research code.
 
 ### IDEAForDynamics project members
 
