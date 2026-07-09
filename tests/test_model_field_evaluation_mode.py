@@ -8,6 +8,7 @@ import pytest
 from simulations.baseline.context import build_context
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
+from simulations.baseline.config import build_baseline_config_from_preset
 
 from pydynamicforest.initial_conditions import build_initial_state
 from pydynamicforest.solver import (
@@ -212,3 +213,83 @@ def test_short_simulation_runs_with_state_model_field_evaluation():
 
     assert results.final_state.step_index == 2
     assert results.metadata["n_steps_run"] == 2
+
+def test_short_simulation_matches_between_legacy_and_state_model_field_modes():
+    """
+    For the current baseline laws, a short simulation should give the same
+    numerical results when model fields are evaluated through the legacy
+    pathway or through the state-aware pathway.
+
+    This test is a guard before any future migration of the solver toward
+    state-aware model laws.
+    """
+
+    config = build_baseline_config_from_preset("short-debug")
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    legacy_p = replace(
+        p,
+        numerics=replace(
+            p.numerics,
+            model_field_evaluation="legacy",
+        ),
+    )
+
+    state_p = replace(
+        p,
+        numerics=replace(
+            p.numerics,
+            model_field_evaluation="state",
+        ),
+    )
+
+    legacy_results = simulate(
+        x0,
+        legacy_p,
+        c,
+        max_steps=5,
+    )
+
+    state_results = simulate(
+        x0,
+        state_p,
+        c,
+        max_steps=5,
+    )
+
+    assert legacy_results.final_state.step_index == state_results.final_state.step_index
+    assert legacy_results.final_state.time == state_results.final_state.time
+    assert legacy_results.final_state.age == state_results.final_state.age
+
+    assert np.allclose(
+        legacy_results.final_state.U,
+        state_results.final_state.U,
+        rtol=1e-12,
+        atol=1e-14,
+    )
+
+    time_series_fields = [
+        "total_mass",
+        "legacy_mass",
+        "minimum_density",
+        "top_height",
+        "basal_area",
+    ]
+
+    for field_name in time_series_fields:
+        legacy_values = np.asarray(
+            getattr(legacy_results.time_series, field_name)
+        )
+        state_values = np.asarray(
+            getattr(state_results.time_series, field_name)
+        )
+
+        assert np.allclose(
+            legacy_values,
+            state_values,
+            rtol=1e-12,
+            atol=1e-14,
+        )
