@@ -14,6 +14,8 @@ and continues as:
 
     0.3.0.dev0
 
+The `v0.2.0-refactor` tag corresponds to a modular technical refactor preserving the numerical behavior of the original model. Subsequent development may prepare or introduce model extensions, but these should be clearly separated from the validated refactor milestone.
+
 ## Conceptual architecture
 
 The target conceptual API is:
@@ -33,6 +35,37 @@ The object `Parameters` separates:
 - `NumericalParameters`: grid, time discretization, numerical scheme and solver choices.
 
 This structure is inspired by the conceptual organization previously used in C-STABILITY.
+
+## Main conceptual objects
+
+The current refactor introduces the following objects in `pydynamicforest/types.py`:
+
+- `InitialCondition`
+- `PhysicalScales`
+- `CoefficientLaw`
+- `StatusModel`
+- `ModelParameters`
+- `GridDefinition`
+- `TimeDiscretization`
+- `NumericalParameters`
+- `Parameters`
+- `OutputSpecification`
+- `SimulationContext`
+- `State`
+- `DerivedQuantities`
+- `ModelFields`
+- `TimeSeries`
+- `SimulationResults`
+
+The recently introduced `ModelFields` object represents model coefficient fields evaluated on the numerical grid:
+
+- diffusion;
+- mortality;
+- height growth;
+- DBH growth;
+- optional status field.
+
+It prepares future model extensions in which coefficient fields may depend on the current state, derived quantities and the simulation context.
 
 ## Current package structure
 
@@ -113,7 +146,7 @@ This enables lightweight scenario variants without duplicating the baseline file
 
 ## Baseline presets
 
-The baseline configuration layer now provides presets.
+The baseline configuration layer provides presets.
 
 Current presets are:
 
@@ -251,6 +284,63 @@ or:
 
     results = simulate(x0, p, c, solver_name="sparse")
 
+The current solver still uses the legacy time-based model-field evaluation in order to preserve the validated numerical behavior of the original model.
+
+## Model field evaluation
+
+The current code distinguishes two model-field evaluation interfaces.
+
+### Legacy time-based interface
+
+The legacy-compatible interface remains available and is still used by the solver:
+
+    evaluate_model_fields(p, time=...)
+
+or equivalently in the solver:
+
+    evaluate_model_fields(p, t_current)
+
+This interface preserves compatibility with the existing dense and sparse legacy-like solvers.
+
+### State-aware interface
+
+A new state-aware and context-aware model-field evaluation interface has been introduced:
+
+    evaluate_state_model_fields(
+        p,
+        state,
+        derived=None,
+        context=None,
+    )
+
+This function returns a `ModelFields` object.
+
+It prepares future model extensions where diffusion, mortality or growth laws may depend on:
+
+- the current state `U`;
+- derived quantities;
+- the simulation context.
+
+The interface is designed to support future laws with richer signatures such as:
+
+    law.function(
+        t,
+        x,
+        y,
+        state=state,
+        derived=derived,
+        context=context,
+        parameters=law.parameters,
+    )
+
+while remaining compatible with legacy laws of the form:
+
+    law.function(t, x, y)
+
+At this stage, the state-aware interface is tested but is not yet used by the main solver. This avoids changing the numerical behavior validated against the legacy reference.
+
+Future state-dependent laws are expected to be introduced first as explicit dependencies on the current state `U^n`, before considering fully implicit nonlinear solves involving `U^{n+1}`.
+
 ## Sparse solver validation
 
 A sparse version of the legacy one-step solver has been implemented.
@@ -375,7 +465,8 @@ Other current limitations include:
 - recruitment is not yet implemented;
 - alternative mortality laws are not yet implemented;
 - alternative growth and status definitions remain to be explored;
-- nonlinear dependencies on `U` or derived quantities remain future model extensions.
+- nonlinear dependencies on `U`, derived quantities or simulation context remain future model extensions;
+- the current solver does not yet implement nonlinear fixed-point or Newton iterations.
 
 ## Versioning strategy
 
@@ -393,7 +484,7 @@ The current development branch follows `v0.2.0-refactor` and uses version:
 
     0.3.0.dev0
 
-Future versions may introduce explicit model extensions, such as nonlinear dependencies on the state variable `U` or on derived quantities.
+Future versions may introduce explicit model extensions, such as nonlinear dependencies on the state variable `U`, derived quantities or the simulation context.
 
 ## License
 
@@ -406,14 +497,15 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 Recommended next steps:
 
 1. Continue improving scenario configuration.
-2. Consider external configuration files later if needed.
-3. Further consolidate CLI workflows.
-4. Further harmonize quadrature rules across diagnostics.
-5. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
-6. Prepare future scientific extensions:
+2. Keep the legacy time-based solver path stable until state-aware evaluation is fully validated.
+3. Prepare a controlled migration of the solver toward `evaluate_state_model_fields`.
+4. Further consolidate CLI workflows.
+5. Further harmonize quadrature rules across diagnostics.
+6. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
+7. Prepare future scientific extensions:
    - recruitment;
    - alternative mortality laws;
    - alternative growth functions;
    - alternative status definitions;
-   - nonlinear dependencies on `U` or derived quantities.
-7. Continue improving visualization quality in a dedicated future step.
+   - nonlinear dependencies on `U`, derived quantities or simulation context.
+8. Continue improving visualization quality in a dedicated future step.
