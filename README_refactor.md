@@ -681,6 +681,20 @@ PyDynamicForest is distributed under the GNU Lesser General Public License v3.0 
 
 SPDX-License-Identifier: LGPL-3.0-or-later
 
+## Versioning strategy
+
+The project uses Git tags to distinguish important scientific and technical states of the code.
+
+Planned tags include:
+
+- `v0.1.0-original`: original research script developed before the modular refactor;
+- `v0.2.0-refactor`: modular technical refactor preserving the numerical behavior of the original model;
+- `v1.0.0-submission`: version used for manuscript submission.
+
+The `legacy/` directory is currently kept for reproducibility and regression testing.
+
+The current refactor version is intended to remain scientifically equivalent to the original model. Future versions may introduce explicit model extensions, such as nonlinear dependencies on the state variable `U` or on derived quantities.
+
 ## Next steps
 
 Recommended next steps:
