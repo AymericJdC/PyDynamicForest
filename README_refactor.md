@@ -184,6 +184,7 @@ Available overrides include:
     --initial-age
     --final-age
     --observation-ages
+    --model-field-evaluation
 
 For example:
 
@@ -192,6 +193,14 @@ For example:
 or:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --nx 12 --ny 12 --max-steps 5 --output-dir outputs\short_debug_12x12
+
+The model-field evaluation mode can also be selected explicitly:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation legacy --max-steps 5 --output-dir outputs\mfe_legacy_debug
+
+or:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
 
 These CLI overrides are applied to a deep copy of the selected preset.
 
@@ -380,6 +389,23 @@ Therefore, the validated numerical behavior remains unchanged by default.
 
 The `"state"` mode is currently preparatory. It allows the solver infrastructure to be progressively migrated toward state-aware model laws, but should be used carefully because future dependencies on `U`, derived quantities or context may change the mathematical and numerical interpretation of the scheme.
 
+At the solver boundary, both modes currently return a legacy-compatible dictionary format. This is intentional: the dense and sparse legacy-like solvers still access fields as:
+
+    fields["diffusion"]
+    fields["mortality"]
+    fields["height_growth"]
+    fields["dbh_growth"]
+
+The state-aware model-field interface itself returns a `ModelFields` object, but `evaluate_model_fields_for_solver(...)` converts it to the current solver-compatible dictionary format. This allows the state-aware pathway to be tested without rewriting the solver internals immediately.
+
+The model-field evaluation mode can also be overridden from the command line:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation legacy --max-steps 5 --output-dir outputs\mfe_legacy_debug
+
+or:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
 For the current baseline laws, tests verify that the `"legacy"` and `"state"` model-field evaluation modes produce identical coefficient fields for:
 
 - diffusion;
@@ -517,7 +543,8 @@ Other current limitations include:
 - alternative growth and status definitions remain to be explored;
 - nonlinear dependencies on `U`, derived quantities or simulation context remain future model extensions;
 - the current solver uses `model_field_evaluation="legacy"` by default;
-- the `"state"` model-field evaluation mode is preparatory and is not yet the validated production pathway;
+- the `"state"` model-field evaluation mode is available for testing but remains preparatory;
+- the state-aware interface returns `ModelFields`, but the solver-side wrapper currently converts fields to the legacy dictionary format expected by the existing solvers;
 - the current solver does not yet implement nonlinear fixed-point or Newton iterations.
 
 ## Versioning strategy

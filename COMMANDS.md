@@ -125,7 +125,8 @@ These tests check:
 - the state-aware model-field evaluation interface;
 - context-dependent coefficient laws;
 - derived-dependent coefficient laws;
-- the solver-side selection between `"legacy"` and `"state"` model-field evaluation modes.
+- the solver-side selection between `"legacy"` and `"state"` model-field evaluation modes;
+- the equivalence of `"legacy"` and `"state"` model-field fields for the current baseline laws.
 
 ### Run all tests, including slow tests
 
@@ -200,6 +201,30 @@ The configurable baseline runner accepts selected configuration overrides.
 
     pydf-run-baseline --preset baseline --initial-age 20 --final-age 70 --max-steps 5 --output-dir outputs\cli_age_override
 
+### Override model-field evaluation mode
+
+The model-field evaluation mode can be selected explicitly.
+
+Use the validated legacy-compatible pathway:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation legacy --max-steps 5 --output-dir outputs\mfe_legacy_debug
+
+Use the state-aware preparatory pathway:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
+Equivalent developer commands are:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --model-field-evaluation legacy --max-steps 5 --output-dir outputs\mfe_legacy_debug
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
+The default mode is:
+
+    model_field_evaluation="legacy"
+
+The `"state"` mode is intended for testing the future state-aware model-law interface. It is not yet the default production pathway.
+
 Available override options are:
 
     --nx
@@ -209,6 +234,7 @@ Available override options are:
     --initial-age
     --final-age
     --observation-ages
+    --model-field-evaluation
 
 These options modify a copy of the selected preset for the current run only.
 
@@ -387,7 +413,7 @@ For regression tests or debugging, the solver can still be overridden explicitly
 
 ### Model-field evaluation mode
 
-The solver now uses an intermediate model-field evaluation wrapper:
+The solver uses an intermediate model-field evaluation wrapper:
 
     evaluate_model_fields_for_solver(state, p, context=None)
 
@@ -406,7 +432,7 @@ The default baseline configuration uses:
 
 This means that the solver still uses the validated legacy time-based model-field evaluation pathway.
 
-The `"state"` mode is preparatory. It calls the state-aware interface:
+The `"state"` mode calls the state-aware interface:
 
     evaluate_state_model_fields(
         p,
@@ -420,6 +446,12 @@ This is intended for future model laws depending on:
 - the current state `U`;
 - derived quantities;
 - the simulation context.
+
+At the solver boundary, both modes currently return a legacy-compatible dictionary format, because the dense and sparse legacy-like solvers still access fields as dictionary entries.
+
+The `"state"` mode can be selected from the CLI:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
 
 At this stage, the `"state"` mode is not the default production pathway.
 
