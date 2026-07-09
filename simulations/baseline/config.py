@@ -107,6 +107,7 @@ BASELINE_CONFIG = {
         "scheme_name": "legacy_semi_implicit_sparse_reduced",
         "matrix_storage": "sparse",
         "linear_solver": "scipy.sparse.linalg.spsolve",
+        "model_field_evaluation": "legacy",
         "epsilon_zero_mass": 1e-15,
         "positivity_tolerance": 1e-12,
     },

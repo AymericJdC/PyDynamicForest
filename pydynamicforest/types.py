@@ -172,6 +172,7 @@ class NumericalParameters:
     scheme_name: str = "semi_implicit_diffusion_reaction_explicit_upwind_transport"
     matrix_storage: str = "dense"
     linear_solver: str = "numpy.linalg.solve"
+    model_field_evaluation: str = "legacy"
     epsilon_zero_mass: float = 1e-15
     positivity_tolerance: float = 1e-12
     description: Optional[str] = None
@@ -278,7 +279,7 @@ class ModelFields:
     dbh_growth: np.ndarray
     status: Optional[np.ndarray] = None
     description: Optional[str] = None
-    
+
 @dataclass
 class TimeSeries:
     """

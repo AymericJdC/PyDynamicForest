@@ -26,7 +26,10 @@ from scipy.sparse.linalg import spsolve
 
 from pydynamicforest.initial_conditions import build_initial_state
 from pydynamicforest.diagnostics import state_diagnostics
-from pydynamicforest.model import evaluate_model_fields
+from pydynamicforest.model import (
+    evaluate_model_fields,
+    evaluate_state_model_fields,
+)
 from pydynamicforest.numerics import (
     compute_derived_quantities,
     flatten_index,
@@ -442,6 +445,49 @@ def assemble_sparse_legacy_system(
 
     return A.tocsr(), b
 
+def evaluate_model_fields_for_solver(
+    state: State,
+    p: Parameters,
+    context: SimulationContext | None = None,
+):
+    """
+    Evaluate model fields for the time-step solver.
+
+    This function centralizes the choice between:
+
+    - the legacy time-based model-field evaluation;
+    - the new state-aware model-field evaluation.
+
+    The default mode is controlled by:
+
+        p.numerics.model_field_evaluation
+
+    Supported values are currently:
+
+    - "legacy": use evaluate_model_fields(p, state.time);
+    - "state": use evaluate_state_model_fields(p, state, derived=None, context=context).
+
+    The default baseline configuration uses "legacy", so the validated
+    numerical behavior is preserved.
+    """
+
+    mode = getattr(p.numerics, "model_field_evaluation", "legacy")
+
+    if mode == "legacy":
+        return evaluate_model_fields(p, state.time)
+
+    if mode == "state":
+        return evaluate_state_model_fields(
+            p,
+            state,
+            derived=None,
+            context=context,
+        )
+
+    raise ValueError(
+        f"Unknown model_field_evaluation mode: {mode}. "
+        "Expected 'legacy' or 'state'."
+    )
 
 def advance_one_step_dense_legacy(
     state: State,
@@ -461,7 +507,10 @@ def advance_one_step_dense_legacy(
 
     derived = compute_derived_quantities(state, p)
 
-    fields_current = evaluate_model_fields(p, t_current)
+    fields_current = evaluate_model_fields_for_solver(
+        state,
+        p,
+    )
     fields_next = evaluate_model_fields(p, t_next)
 
     transport = compute_transport_legacy(
@@ -514,7 +563,10 @@ def advance_one_step_sparse_legacy(
 
     derived = compute_derived_quantities(state, p)
 
-    fields_current = evaluate_model_fields(p, t_current)
+    fields_current = evaluate_model_fields_for_solver(
+        state,
+        p,
+    )
     fields_next = evaluate_model_fields(p, t_next)
 
     transport = compute_transport_legacy(

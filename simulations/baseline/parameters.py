@@ -179,6 +179,7 @@ def build_parameters(config: dict | None = None) -> Parameters:
         scheme_name=solver_cfg["scheme_name"],
         matrix_storage=solver_cfg["matrix_storage"],
         linear_solver=solver_cfg["linear_solver"],
+        model_field_evaluation=solver_cfg["model_field_evaluation"],
         epsilon_zero_mass=solver_cfg["epsilon_zero_mass"],
         positivity_tolerance=solver_cfg["positivity_tolerance"],
         description=(

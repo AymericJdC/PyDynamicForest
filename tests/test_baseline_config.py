@@ -90,6 +90,9 @@ def test_baseline_parameters_use_config_values():
     assert p.numerics.positivity_tolerance == (
         cfg["solver"]["positivity_tolerance"]
     )
+    assert p.numerics.model_field_evaluation == (
+        cfg["solver"]["model_field_evaluation"]
+    )
 
 
 def test_baseline_context_uses_config_values():
