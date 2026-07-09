@@ -6,6 +6,8 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ## Unreleased
 
+## v0.2.0-refactor - 2026-07-09
+
 ### Added
 
 - Modular package structure under `pydynamicforest/`.
