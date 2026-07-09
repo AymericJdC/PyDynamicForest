@@ -140,6 +140,38 @@ or:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
 
+## Baseline CLI overrides
+
+The configurable baseline runner can override selected baseline configuration values directly from the command line.
+
+Available configuration override options include:
+
+    --nx
+    --ny
+    --n-steps
+    --t-end
+    --initial-age
+    --final-age
+    --observation-ages
+
+For example, run a small grid debug simulation with:
+
+    pydf-run-baseline --nx 10 --ny 10 --n-steps 20 --max-steps 5 --output-dir outputs\cli_small_grid
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --nx 10 --ny 10 --n-steps 20 --max-steps 5 --output-dir outputs\cli_small_grid
+
+Run with custom observation ages:
+
+    pydf-run-baseline --max-steps 5 --observation-ages 18 20 25 --output-dir outputs\cli_custom_observations
+
+Override the simulation horizon:
+
+    pydf-run-baseline --t-end 10 --n-steps 20 --max-steps 5 --output-dir outputs\cli_time_override
+
+These overrides modify a copy of the baseline configuration for the current run only. The file `simulations/baseline/config.py` is not modified.
+
 ## Baseline scenario configuration
 
 The baseline scenario is configured through:
@@ -163,7 +195,7 @@ The following builders read their values from this configuration:
     build_parameters()
     build_context()
 
-This provides a first step toward more flexible scenario management while keeping the current scenario definition simple and explicit.
+The builders can also accept a custom configuration dictionary, which allows creating scenario variants without duplicating the baseline files.
 
 ## Validation against legacy references
 
@@ -230,14 +262,6 @@ or equivalently:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse
 
-This command reads exported observations from:
-
-    outputs/baseline_reduced_sparse/observations/
-
-and writes figures to:
-
-    outputs/baseline_reduced_sparse/figures/
-
 For each observation, the script currently generates:
 
 - a 2D density field;
@@ -253,14 +277,6 @@ After exporting observations, comparison figures across stand ages can be genera
 or equivalently:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse
-
-This command reads exported observations from:
-
-    outputs/baseline_reduced_sparse/observations/
-
-and writes comparison figures to:
-
-    outputs/baseline_reduced_sparse/figures/comparisons/
 
 The script currently generates:
 

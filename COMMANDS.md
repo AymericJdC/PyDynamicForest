@@ -75,7 +75,7 @@ A temporary fix for the current terminal is:
     git add <file_or_directory>
     git commit -m "Commit message"
 
-### Push the refactor branch
+### Push the development branch
 
     git push origin refactor-julien
 
@@ -136,24 +136,16 @@ The baseline scenario values are centralized in:
 
     simulations/baseline/config.py
 
-This file defines the main configuration values used by:
+The baseline builders can also accept a custom configuration dictionary:
 
-    simulations/baseline/initial_condition.py
-    simulations/baseline/parameters.py
-    simulations/baseline/context.py
+    config = copy_baseline_config()
+    config["grid"]["nx"] = 10
 
-It currently contains:
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
 
-- stand ages;
-- initial condition parameters;
-- physical scales;
-- grid definition;
-- time discretization;
-- model coefficient values;
-- solver settings;
-- observation and output settings.
-
-This allows the baseline scenario to be modified from a single configuration file instead of editing several files independently.
+This allows scenario variants without duplicating the baseline files.
 
 ## 7. Baseline simulations
 
@@ -183,15 +175,43 @@ For debugging or regression checks:
 
     pydf-run-baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
 
-### Run the older explicit reduced sparse baseline script
+## 8. Baseline CLI overrides
 
-    pydf-run-baseline-reduced-sparse
+The configurable baseline runner accepts selected configuration overrides.
 
-or:
+### Override grid size
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
+    pydf-run-baseline --nx 10 --ny 10 --n-steps 20 --max-steps 5 --output-dir outputs\cli_small_grid
 
-## 8. Legacy references
+Equivalent developer command:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --nx 10 --ny 10 --n-steps 20 --max-steps 5 --output-dir outputs\cli_small_grid
+
+### Override observation ages
+
+    pydf-run-baseline --max-steps 5 --observation-ages 18 20 25 --output-dir outputs\cli_custom_observations
+
+### Override time horizon
+
+    pydf-run-baseline --t-end 10 --n-steps 20 --max-steps 5 --output-dir outputs\cli_time_override
+
+### Override stand ages
+
+    pydf-run-baseline --initial-age 20 --final-age 70 --max-steps 5 --output-dir outputs\cli_age_override
+
+Available override options are:
+
+    --nx
+    --ny
+    --n-steps
+    --t-end
+    --initial-age
+    --final-age
+    --observation-ages
+
+These options modify a copy of the baseline configuration for the current run only.
+
+## 9. Legacy references
 
 ### Run the short legacy reference
 
@@ -203,7 +223,7 @@ or:
 
 Warning: the reduced legacy reference uses the dense legacy solver and may be slower than the refactored sparse solver.
 
-## 9. Comparisons and validation
+## 10. Comparisons and validation
 
 ### Compare sparse refactor with reduced legacy reference
 
@@ -222,13 +242,7 @@ This compares:
 - final legacy mass;
 - minimum density over the trajectory.
 
-### Expected validation status
-
-For the reduced reference case, the sparse refactored solver should match the legacy reduced reference up to numerical precision.
-
-Typical discrepancies are expected to be close to machine precision.
-
-## 10. Observation exports
+## 11. Observation exports
 
 Selected model observations are exported as `.npz` files under:
 
@@ -248,20 +262,7 @@ Each observation file can be loaded in Python with:
     height_grid_physical = data["height_grid_physical"]
     dbh_grid_physical = data["dbh_grid_physical"]
 
-Observation files contain:
-
-- `U`;
-- `time`;
-- `age`;
-- `step_index`;
-- `height_grid`;
-- `dbh_grid`;
-- `height_grid_physical`;
-- `dbh_grid_physical`.
-
-## 11. Plotting exported observations
-
-After running a simulation that exports observations, figures can be generated from the saved `.npz` files without rerunning the model.
+## 12. Plotting exported observations
 
 Recommended entry point:
 
@@ -271,15 +272,9 @@ Equivalent developer command:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse
 
-The script generates, for each observation:
+## 13. Plotting observation comparisons
 
-- a 2D density field;
-- a height distribution;
-- a DBH distribution.
-
-## 12. Plotting observation comparisons
-
-After exporting observations, comparison figures across stand ages can be generated with:
+Recommended entry point:
 
     pydf-plot-observation-comparisons --input-dir outputs\baseline_reduced_sparse
 
@@ -287,15 +282,7 @@ Equivalent developer command:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse
 
-The script generates:
-
-- height distribution comparisons;
-- DBH distribution comparisons;
-- density field comparisons.
-
-## 13. Plotting diagnostic time series
-
-After running a simulation that exports `time_series.csv`, diagnostic figures can be generated without rerunning the model.
+## 14. Plotting diagnostic time series
 
 Recommended entry point:
 
@@ -305,19 +292,11 @@ Equivalent developer command:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
 
-The script generates figures for:
-
-- total mass;
-- legacy mass;
-- minimum density;
-- top height;
-- basal area.
-
 Use simulation time instead of stand age on the x-axis with:
 
     pydf-plot-diagnostics --x-key time
 
-## 14. Syntax checks
+## 15. Syntax checks
 
 ### Compile a single Python file
 
@@ -327,7 +306,7 @@ Use simulation time instead of stand age on the x-axis with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m compileall pydynamicforest
 
-## 15. Outputs
+## 16. Outputs
 
 Simulation outputs are currently written under:
 
@@ -347,7 +326,7 @@ Example:
         ├── comparisons/
         └── time_series/
 
-## 16. Development notes
+## 17. Development notes
 
 ### Main conceptual API
 
@@ -385,20 +364,7 @@ For regression tests or debugging, the solver can still be overridden explicitly
     results = simulate(x0, p, c, solver_name="dense")
     results = simulate(x0, p, c, solver_name="sparse")
 
-### Observation management
-
-Observations can be requested through the simulation context:
-
-    OutputSpecification(
-        observation_ages=[18.0, 45.0, 69.0],
-        save_full_trajectory=False,
-    )
-
-When `save_full_trajectory` is `False`, only states close to the requested stand ages are stored in `results.observations`.
-
-In this codebase, observations are simulated model states selected for analysis. They should not be confused with empirical field observations.
-
-## 17. Common troubleshooting
+## 18. Common troubleshooting
 
 ### Python points to the wrong executable
 
@@ -438,17 +404,13 @@ rather than:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe scripts\run_baseline.py
 
-### Windows encoding issue in redirected legacy outputs
-
-Some legacy outputs may be encoded with Windows console encoding. The comparison scripts handle this by trying UTF-8 first and falling back to cp1252.
-
 ### Matplotlib / Tk issue
 
 Plotting uses the non-interactive `Agg` backend in `pydynamicforest/plotting.py`.
 
 This avoids errors related to missing Tk libraries when generating figures in tests or batch runs.
 
-## 18. Recommended daily workflow
+## 19. Recommended daily workflow
 
 A typical development cycle is:
 
