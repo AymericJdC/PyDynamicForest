@@ -415,6 +415,18 @@ For the current baseline laws, tests verify that the `"legacy"` and `"state"` mo
 
 This equivalence test provides a guard before any future migration of the solver toward the state-aware pathway.
 
+For the current baseline laws, tests also verify that short simulations run with:
+
+    model_field_evaluation="legacy"
+
+and:
+
+    model_field_evaluation="state"
+
+produce identical final states and diagnostic time series on the `short-debug` preset.
+
+This provides an additional guard before any future migration of the solver toward the state-aware model-field evaluation pathway.
+
 Future state-dependent laws are expected to be introduced first as explicit dependencies on the current state `U^n`, before considering fully implicit nonlinear solves involving `U^{n+1}`.
 
 ## Sparse solver validation

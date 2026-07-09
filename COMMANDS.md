@@ -126,7 +126,8 @@ These tests check:
 - context-dependent coefficient laws;
 - derived-dependent coefficient laws;
 - the solver-side selection between `"legacy"` and `"state"` model-field evaluation modes;
-- the equivalence of `"legacy"` and `"state"` model-field fields for the current baseline laws.
+- the equivalence of `"legacy"` and `"state"` model-field fields for the current baseline laws;
+- the equivalence of short simulations run with `"legacy"` and `"state"` model-field evaluation modes on the `short-debug` preset.
 
 ### Run all tests, including slow tests
 
