@@ -132,3 +132,97 @@ def copy_baseline_config() -> dict:
     """
 
     return deepcopy(BASELINE_CONFIG)
+
+def make_baseline_config():
+    """
+    Return the default baseline reduced configuration.
+    """
+
+    return copy_baseline_config()
+
+
+def make_short_debug_config():
+    """
+    Return a lightweight baseline configuration for fast debugging.
+
+    This preset uses a smaller grid and fewer time steps while preserving
+    the same model structure.
+    """
+
+    config = copy_baseline_config()
+
+    config["name"] = "baseline_short_debug"
+    config["description"] = (
+        "Short debug version of the baseline reduced scenario."
+    )
+
+    config["grid"]["nx"] = 10
+    config["grid"]["ny"] = 10
+
+    config["time"]["t_end"] = 2.0
+    config["time"]["n_steps"] = 20
+
+    config["ages"]["final_age"] = (
+        config["ages"]["initial_age"] + config["time"]["t_end"]
+    )
+
+    config["output"]["observation_ages"] = [
+        config["ages"]["initial_age"],
+        config["ages"]["initial_age"] + 1.0,
+        config["ages"]["final_age"],
+    ]
+
+    return config
+
+
+def make_dense_debug_config():
+    """
+    Return a lightweight dense-solver debug configuration.
+
+    This preset is intended for regression checks and debugging only.
+    The dense solver should not be used for practical large simulations.
+    """
+
+    config = make_short_debug_config()
+
+    config["name"] = "baseline_dense_debug"
+    config["description"] = (
+        "Dense-solver debug version of the baseline reduced scenario."
+    )
+
+    config["solver"]["scheme_name"] = "legacy_semi_implicit_dense_debug"
+    config["solver"]["matrix_storage"] = "dense"
+    config["solver"]["linear_solver"] = "numpy.linalg.solve"
+
+    return config
+
+
+BASELINE_PRESET_BUILDERS = {
+    "baseline": make_baseline_config,
+    "short-debug": make_short_debug_config,
+    "dense-debug": make_dense_debug_config,
+}
+
+
+def available_baseline_presets():
+    """
+    Return the list of available baseline configuration presets.
+    """
+
+    return sorted(BASELINE_PRESET_BUILDERS.keys())
+
+
+def build_baseline_config_from_preset(preset):
+    """
+    Build a baseline configuration from a preset name.
+    """
+
+    if preset not in BASELINE_PRESET_BUILDERS:
+        available = ", ".join(available_baseline_presets())
+        raise ValueError(
+            f"Unknown baseline preset: {preset}. "
+            f"Available presets are: {available}."
+        )
+
+    builder = BASELINE_PRESET_BUILDERS[preset]
+    return builder()

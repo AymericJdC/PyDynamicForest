@@ -23,7 +23,10 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from time import perf_counter
 
-from simulations.baseline.config import copy_baseline_config
+from simulations.baseline.config import (
+    available_baseline_presets,
+    build_baseline_config_from_preset,
+)
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
@@ -50,6 +53,18 @@ def build_parser() -> ArgumentParser:
         help=(
             "Maximum number of time steps to run. "
             "Default: 10. Ignored if --full is used."
+        ),
+    )
+    
+    parser.add_argument(
+        "--preset",
+        type=str,
+        default="baseline",
+        choices=available_baseline_presets(),
+        help=(
+            "Baseline configuration preset. "
+            "Available presets: baseline, short-debug, dense-debug. "
+            "Default: baseline."
         ),
     )
 
@@ -195,7 +210,7 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    config = copy_baseline_config()
+    config = build_baseline_config_from_preset(args.preset)
     config = apply_cli_overrides(config, args)
 
     x0 = build_initial_condition(config)
@@ -230,6 +245,7 @@ def main() -> None:
     print_configuration_summary(config)
 
     print("Run configuration:")
+    print(f" preset = {args.preset}")
     print(f"  output_dir        = {args.output_dir}")
     print(f"  full_run          = {args.full}")
     print(f"  max_steps         = {max_steps}")

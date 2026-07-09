@@ -4,7 +4,15 @@ from argparse import Namespace
 
 from scripts.run_baseline import apply_cli_overrides
 
-from simulations.baseline.config import BASELINE_CONFIG, copy_baseline_config
+from simulations.baseline.config import (
+    BASELINE_CONFIG,
+    copy_baseline_config,
+    available_baseline_presets,
+    build_baseline_config_from_preset,
+    make_baseline_config,
+    make_short_debug_config,
+    make_dense_debug_config,
+)
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
@@ -216,3 +224,99 @@ def test_run_baseline_apply_cli_overrides():
     assert updated["ages"]["initial_age"] == 18.0
     assert updated["ages"]["final_age"] == 26.0
     assert updated["output"]["observation_ages"] == [18.0, 22.0, 26.0]
+
+def test_available_baseline_presets_contains_expected_values():
+    presets = available_baseline_presets()
+
+    assert presets == [
+        "baseline",
+        "dense-debug",
+        "short-debug",
+    ]
+
+
+def test_make_baseline_config_matches_default_copy():
+    config = make_baseline_config()
+
+    assert config["name"] == BASELINE_CONFIG["name"]
+    assert config["grid"]["nx"] == BASELINE_CONFIG["grid"]["nx"]
+    assert config["solver"]["matrix_storage"] == "sparse"
+
+
+def test_make_short_debug_config():
+    config = make_short_debug_config()
+
+    assert config["name"] == "baseline_short_debug"
+    assert config["grid"]["nx"] == 10
+    assert config["grid"]["ny"] == 10
+    assert config["time"]["t_end"] == 2.0
+    assert config["time"]["n_steps"] == 20
+    assert config["ages"]["final_age"] == 20.0
+    assert config["solver"]["matrix_storage"] == "sparse"
+    assert config["output"]["observation_ages"] == [18.0, 19.0, 20.0]
+
+
+def test_make_dense_debug_config():
+    config = make_dense_debug_config()
+
+    assert config["name"] == "baseline_dense_debug"
+    assert config["grid"]["nx"] == 10
+    assert config["grid"]["ny"] == 10
+    assert config["time"]["n_steps"] == 20
+    assert config["solver"]["matrix_storage"] == "dense"
+    assert config["solver"]["linear_solver"] == "numpy.linalg.solve"
+
+
+def test_build_baseline_config_from_preset():
+    baseline = build_baseline_config_from_preset("baseline")
+    short_debug = build_baseline_config_from_preset("short-debug")
+    dense_debug = build_baseline_config_from_preset("dense-debug")
+
+    assert baseline["name"] == "baseline_reduced"
+    assert short_debug["name"] == "baseline_short_debug"
+    assert dense_debug["name"] == "baseline_dense_debug"
+
+
+def test_build_baseline_config_from_unknown_preset_raises():
+    try:
+        build_baseline_config_from_preset("unknown")
+    except ValueError as exc:
+        assert "Unknown baseline preset" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError for unknown preset.")
+
+
+def test_short_debug_preset_simulation_runs():
+    config = build_baseline_config_from_preset("short-debug")
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert results.metadata["solver"] == "sparse_legacy"
+
+
+def test_dense_debug_preset_simulation_runs():
+    config = build_baseline_config_from_preset("dense-debug")
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert results.metadata["solver"] == "dense_legacy"
