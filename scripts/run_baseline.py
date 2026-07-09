@@ -91,6 +91,17 @@ def build_parser() -> ArgumentParser:
             "If omitted, the solver is selected from p.numerics.matrix_storage."
         ),
     )
+    parser.add_argument(
+        "--model-field-evaluation",
+        type=str,
+        default=None,
+        choices=["legacy", "state"],
+        help=(
+            "Optional model-field evaluation mode override. "
+            "Available values: 'legacy' or 'state'. "
+            "If omitted, the value is read from the selected preset."
+        ),
+    )
 
     # ------------------------------------------------------------------
     # Optional configuration overrides
@@ -184,6 +195,9 @@ def apply_cli_overrides(config: dict, args: Namespace) -> dict:
     if args.observation_ages is not None:
         config["output"]["observation_ages"] = args.observation_ages
 
+    if args.model_field_evaluation is not None:
+        config["solver"]["model_field_evaluation"] = args.model_field_evaluation
+
     return config
 
 
@@ -202,6 +216,7 @@ def print_configuration_summary(config: dict) -> None:
     print(f"  n_steps           = {config['time']['n_steps']}")
     print(f"  matrix_storage    = {config['solver']['matrix_storage']}")
     print(f"  linear_solver     = {config['solver']['linear_solver']}")
+    print(f" model_field_eval = {config['solver']['model_field_evaluation']}")
     print(f"  observation_ages  = {config['output']['observation_ages']}")
     print()
 
@@ -250,6 +265,7 @@ def main() -> None:
     print(f"  full_run          = {args.full}")
     print(f"  max_steps         = {max_steps}")
     print(f"  solver_override   = {args.solver_name}")
+    print(f" model_field_eval_override = {args.model_field_evaluation}")
     print()
     print("Numerical configuration:")
     print(f"  grid              = {p.numerics.grid.nx} x {p.numerics.grid.ny}")

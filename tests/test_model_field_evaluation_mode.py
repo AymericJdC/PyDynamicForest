@@ -10,7 +10,9 @@ from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 
 from pydynamicforest.initial_conditions import build_initial_state
-from pydynamicforest.solver import evaluate_model_fields_for_solver
+from pydynamicforest.solver import (
+    evaluate_model_fields_for_solver,
+    simulate)
 from pydynamicforest.types import ModelFields
 
 def get_field(fields, name):
@@ -68,7 +70,7 @@ def test_solver_model_field_evaluation_legacy_mode_matches_expected_diffusion():
     assert np.allclose(fields["diffusion"], expected_diffusion)
 
 
-def test_solver_model_field_evaluation_state_mode_returns_model_fields():
+def test_solver_model_field_evaluation_state_mode_returns_legacy_compatible_dict():
     x0 = build_initial_condition()
     p = build_parameters()
     c = build_context()
@@ -94,10 +96,16 @@ def test_solver_model_field_evaluation_state_mode_returns_model_fields():
         p.numerics.grid.ny,
     )
 
-    assert fields.diffusion.shape == expected_shape
-    assert fields.mortality.shape == expected_shape
-    assert fields.height_growth.shape == expected_shape
-    assert fields.dbh_growth.shape == expected_shape
+    assert isinstance(fields, dict)
+
+    for name in [
+        "diffusion",
+        "mortality",
+        "height_growth",
+        "dbh_growth",
+    ]:
+        assert name in fields
+        assert fields[name].shape == expected_shape
 
 
 def test_solver_model_field_evaluation_unknown_mode_raises():
@@ -166,7 +174,7 @@ def test_legacy_and_state_model_field_modes_match_for_baseline():
     )
 
     assert isinstance(legacy_fields, dict)
-    assert isinstance(state_fields, ModelFields)
+    assert isinstance(state_fields, dict)
 
     field_names = [
         "diffusion",
@@ -181,3 +189,26 @@ def test_legacy_and_state_model_field_modes_match_for_baseline():
 
         assert legacy_field.shape == state_field.shape
         assert np.allclose(legacy_field, state_field)
+
+def test_short_simulation_runs_with_state_model_field_evaluation():
+    x0 = build_initial_condition()
+    p = build_parameters()
+    c = build_context()
+
+    p = replace(
+        p,
+        numerics=replace(
+            p.numerics,
+            model_field_evaluation="state",
+        ),
+    )
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert results.metadata["n_steps_run"] == 2

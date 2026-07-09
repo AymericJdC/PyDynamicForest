@@ -445,6 +445,31 @@ def assemble_sparse_legacy_system(
 
     return A.tocsr(), b
 
+def model_fields_to_legacy_dict(fields):
+    """
+    Convert model fields to the legacy dictionary format expected by
+    the current dense and sparse legacy-like solvers.
+
+    The current solvers still access fields as:
+
+        fields["height_growth"]
+
+    The state-aware model-field interface returns a ModelFields object.
+    This adapter allows the solver to remain unchanged while testing the
+    state-aware evaluation pathway.
+    """
+
+    if isinstance(fields, dict):
+        return fields
+
+    return {
+        "diffusion": fields.diffusion,
+        "mortality": fields.mortality,
+        "height_growth": fields.height_growth,
+        "dbh_growth": fields.dbh_growth,
+        "status": fields.status,
+    }
+
 def evaluate_model_fields_for_solver(
     state: State,
     p: Parameters,
@@ -474,15 +499,17 @@ def evaluate_model_fields_for_solver(
     mode = getattr(p.numerics, "model_field_evaluation", "legacy")
 
     if mode == "legacy":
-        return evaluate_model_fields(p, state.time)
+        fields = evaluate_model_fields(p, state.time)
+        return model_fields_to_legacy_dict(fields)
 
     if mode == "state":
-        return evaluate_state_model_fields(
+        fields = evaluate_state_model_fields(
             p,
             state,
             derived=None,
             context=context,
         )
+        return model_fields_to_legacy_dict(fields)
 
     raise ValueError(
         f"Unknown model_field_evaluation mode: {mode}. "

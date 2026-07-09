@@ -216,6 +216,7 @@ def test_run_baseline_apply_cli_overrides():
         initial_age=None,
         final_age=None,
         observation_ages=[18.0, 22.0, 26.0],
+        model_field_evaluation="state",
     )
 
     updated = apply_cli_overrides(config, args)
@@ -227,6 +228,7 @@ def test_run_baseline_apply_cli_overrides():
     assert updated["ages"]["initial_age"] == 18.0
     assert updated["ages"]["final_age"] == 26.0
     assert updated["output"]["observation_ages"] == [18.0, 22.0, 26.0]
+    assert updated["solver"]["model_field_evaluation"] == "state"
 
 def test_available_baseline_presets_contains_expected_values():
     presets = available_baseline_presets()
@@ -323,3 +325,21 @@ def test_dense_debug_preset_simulation_runs():
 
     assert results.final_state.step_index == 2
     assert results.metadata["solver"] == "dense_legacy"
+
+def test_run_baseline_apply_cli_overrides_model_field_evaluation():
+    config = copy_baseline_config()
+
+    args = Namespace(
+        nx=None,
+        ny=None,
+        n_steps=None,
+        t_end=None,
+        initial_age=None,
+        final_age=None,
+        observation_ages=None,
+        model_field_evaluation="state",
+    )
+
+    updated = apply_cli_overrides(config, args)
+
+    assert updated["solver"]["model_field_evaluation"] == "state"
