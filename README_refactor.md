@@ -57,7 +57,7 @@ The current refactor introduces the following objects in `pydynamicforest/types.
 - `TimeSeries`
 - `SimulationResults`
 
-The recently introduced `ModelFields` object represents model coefficient fields evaluated on the numerical grid:
+The `ModelFields` object represents model coefficient fields evaluated on the numerical grid:
 
 - diffusion;
 - mortality;
@@ -284,15 +284,19 @@ or:
 
     results = simulate(x0, p, c, solver_name="sparse")
 
-The current solver still uses the legacy time-based model-field evaluation in order to preserve the validated numerical behavior of the original model.
+In addition to the dense/sparse solver choice, the numerical parameters now also include a model-field evaluation mode:
+
+    model_field_evaluation="legacy"
+
+The default value `"legacy"` preserves the validated legacy-compatible evaluation pathway. The alternative value `"state"` is intended for future development of state-aware model laws.
 
 ## Model field evaluation
 
-The current code distinguishes two model-field evaluation interfaces.
+The current code distinguishes several model-field evaluation layers.
 
 ### Legacy time-based interface
 
-The legacy-compatible interface remains available and is still used by the solver:
+The legacy-compatible interface remains available:
 
     evaluate_model_fields(p, time=...)
 
@@ -302,9 +306,11 @@ or equivalently in the solver:
 
 This interface preserves compatibility with the existing dense and sparse legacy-like solvers.
 
+It is still the default pathway used by the solver, through the configurable solver-side wrapper described below.
+
 ### State-aware interface
 
-A new state-aware and context-aware model-field evaluation interface has been introduced:
+A state-aware and context-aware model-field evaluation interface has been introduced:
 
     evaluate_state_model_fields(
         p,
@@ -345,7 +351,34 @@ The state-aware interface is currently tested with coefficient laws depending on
 
 These tests are intentionally kept outside the baseline scenario. They validate the future extension mechanism without changing the scientific model currently used by the validated baseline and legacy-regression workflows.
 
-At this stage, the state-aware interface is tested but is not yet used by the main solver. This avoids changing the numerical behavior validated against the legacy reference.
+### Solver-side model-field evaluation mode
+
+A solver-side wrapper has been introduced:
+
+    evaluate_model_fields_for_solver(
+        state,
+        p,
+        context=None,
+    )
+
+This function centralizes the choice between the legacy and state-aware model-field evaluation pathways.
+
+The choice is controlled by:
+
+    p.numerics.model_field_evaluation
+
+Currently supported values are:
+
+- `"legacy"`: use the legacy time-based interface;
+- `"state"`: use the state-aware interface.
+
+The baseline configuration uses:
+
+    model_field_evaluation="legacy"
+
+Therefore, the validated numerical behavior remains unchanged by default.
+
+The `"state"` mode is currently preparatory. It allows the solver infrastructure to be progressively migrated toward state-aware model laws, but should be used carefully because future dependencies on `U`, derived quantities or context may change the mathematical and numerical interpretation of the scheme.
 
 Future state-dependent laws are expected to be introduced first as explicit dependencies on the current state `U^n`, before considering fully implicit nonlinear solves involving `U^{n+1}`.
 
@@ -474,6 +507,8 @@ Other current limitations include:
 - alternative mortality laws are not yet implemented;
 - alternative growth and status definitions remain to be explored;
 - nonlinear dependencies on `U`, derived quantities or simulation context remain future model extensions;
+- the current solver uses `model_field_evaluation="legacy"` by default;
+- the `"state"` model-field evaluation mode is preparatory and is not yet the validated production pathway;
 - the current solver does not yet implement nonlinear fixed-point or Newton iterations.
 
 ## Versioning strategy

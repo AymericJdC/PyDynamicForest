@@ -114,6 +114,19 @@ Run it with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_end_to_end_cli.py -m e2e
 
+### Run tests related to model-field evaluation
+
+Run the tests related to model-field evaluation with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_model_field_evaluation.py tests\test_model_field_evaluation_mode.py
+
+These tests check:
+
+- the state-aware model-field evaluation interface;
+- context-dependent coefficient laws;
+- derived-dependent coefficient laws;
+- the solver-side selection between `"legacy"` and `"state"` model-field evaluation modes.
+
 ### Run all tests, including slow tests
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "slow or not slow"
@@ -372,6 +385,44 @@ For regression tests or debugging, the solver can still be overridden explicitly
     results = simulate(x0, p, c, solver_name="dense")
     results = simulate(x0, p, c, solver_name="sparse")
 
+### Model-field evaluation mode
+
+The solver now uses an intermediate model-field evaluation wrapper:
+
+    evaluate_model_fields_for_solver(state, p, context=None)
+
+The behavior is controlled by:
+
+    p.numerics.model_field_evaluation
+
+Currently supported values are:
+
+    model_field_evaluation="legacy"
+    model_field_evaluation="state"
+
+The default baseline configuration uses:
+
+    model_field_evaluation="legacy"
+
+This means that the solver still uses the validated legacy time-based model-field evaluation pathway.
+
+The `"state"` mode is preparatory. It calls the state-aware interface:
+
+    evaluate_state_model_fields(
+        p,
+        state,
+        derived=None,
+        context=None,
+    )
+
+This is intended for future model laws depending on:
+
+- the current state `U`;
+- derived quantities;
+- the simulation context.
+
+At this stage, the `"state"` mode is not the default production pathway.
+
 ## 19. Common troubleshooting
 
 ### Python points to the wrong executable
@@ -432,6 +483,10 @@ A typical development cycle is:
 If the `pydf-*` commands are not available, use the explicit Python module form:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --output-dir outputs\short_debug
+
+For model-field interface checks, run:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_model_field_evaluation.py tests\test_model_field_evaluation_mode.py
 
 For deeper validation, run:
 
