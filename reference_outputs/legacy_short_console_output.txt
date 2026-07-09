@@ -1,0 +1,5 @@
+Simulated top height at final short age = 9.868937681886642 m
+Simulated basal area at final short age = 26.665930651651717 m²/ha
+Initial mass = 2147.8235531491964
+Final mass   = 2117.937819698014
+Minimum U    = 6.609574483099314e-229

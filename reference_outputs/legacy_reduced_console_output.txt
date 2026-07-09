@@ -1,0 +1,7 @@
+Simulated top height at stand age 45 = 31.53449887792551 m
+Simulated top height at stand age 69 = 39.25533368997929 m
+Simulated basal area at stand age 45 = 57.907170805588514 m²/ha
+Simulated basal area at stand age 69 = 69.78945675950361 m²/ha
+Initial mass = 2147.8235531491964
+Final mass   = 650.5187149609636
+Minimum U    = 6.609574483099314e-229

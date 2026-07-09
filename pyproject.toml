@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydynamicforest"
+version = "0.3.0.dev0"
+description = "A Python research code for size-structured forest stand dynamics."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "LGPL-3.0-or-later" }
+
+authors = [
+    { name = "Julien SAINTE-MARIE" }
+]
+
+maintainers = [
+    { name = "Julien SAINTE-MARIE" }
+]
+
+keywords = [
+    "forest dynamics",
+    "size-structured model",
+    "integro-differential equations",
+    "scientific computing",
+    "ecological modelling"
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Operating System :: OS Independent"
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest"
+]
+
+[project.scripts]
+pydf-run-baseline = "scripts.run_baseline:main"
+pydf-run-baseline-reduced-sparse = "scripts.run_baseline_reduced_sparse:main"
+pydf-compare-reduced-reference = "scripts.compare_reduced_reference:main"
+pydf-plot-observations = "scripts.plot_observations:main"
+pydf-plot-observation-comparisons = "scripts.plot_observation_comparisons:main"
+pydf-plot-diagnostics = "scripts.plot_diagnostics:main"
+
+[project.urls]
+Repository = "https://github.com/"
+Documentation = "https://github.com/"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "pydynamicforest",
+    "pydynamicforest.*",
+    "simulations",
+    "simulations.*",
+    "scripts",
+    "scripts.*"
+]
+exclude = [
+    "legacy",
+    "legacy.*",
+    "tests",
+    "tests.*",
+    "outputs",
+    "outputs.*",
+    "reference_outputs",
+    "reference_outputs.*"
+]

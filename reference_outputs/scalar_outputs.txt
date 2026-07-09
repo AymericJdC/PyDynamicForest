@@ -1,0 +1,24 @@
+```text
+Reference scalar outputs
+========================
+
+Script:
+legacy/DynamicForestModel_2D_legacy.py
+
+Branch:
+refactor-julien
+
+Date:
+YYYY-MM-DD
+
+Outputs copied from legacy run:
+
+Simulated top height at stand age 45 = 
+Simulated top height at stand age 69 = 
+
+Simulated basal area at stand age 45 = 
+Simulated basal area at stand age 69 = 
+
+Initial mass = 
+Final mass   = 
+Minimum U    = 

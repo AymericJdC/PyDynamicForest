@@ -1,9 +1,360 @@
 # PyDynamicForest
 
-Author: Aymeric Jacob de Cordemoy
+PyDynamicForest is a Python research code for simulating size-structured forest stand dynamics.
 
-Date: 2026
+The model describes the evolution of a tree density distribution structured by height and DBH.
+The repository is currently being refactored from an initial research script into a modular, maintainable and scientifically traceable codebase.
 
-Version: 1.0
+## Current status
 
-This Python code implements the finite-difference numerical scheme used to simulate the evolution of a size-structured forest stand. The stand density depends on tree height and diameter, while growth and mortality are driven by the non-local status function.
+The current refactor introduces the API:
+
+    results = simulate(x0, p, c)
+
+where `x0` is an `InitialCondition`, `p` is a `Parameters` object, `c` is a `SimulationContext`, and `results` is a `SimulationResults` object.
+
+The solver is selected automatically from the numerical parameters.
+
+For the baseline reduced scenario, the default solver is the sparse legacy-like solver.
+
+The solver can still be explicitly overridden when needed, for example for regression tests:
+
+    results = simulate(x0, p, c, solver_name="dense")
+    results = simulate(x0, p, c, solver_name="sparse")
+
+The sparse solver has been validated against the reduced legacy reference case up to numerical precision.
+
+## Main structure
+
+    pydynamicforest/
+    simulations/
+    scripts/
+    legacy/
+    tests/
+    reference_outputs/
+    outputs/
+
+## Installation
+
+Create the conda environment with:
+
+    conda env create -f environment.yml
+    conda activate pydynamicforest
+
+Or install dependencies with:
+
+    python -m pip install -r requirements.txt
+
+Main dependencies: numpy, scipy, matplotlib, pytest.
+
+## Editable installation
+
+PyDynamicForest can be installed in editable development mode from the repository root:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e .
+
+For development dependencies, use:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e ".[dev]"
+
+This makes the `pydynamicforest`, `simulations` and `scripts` modules importable while keeping the source tree editable.
+
+## Console entry points
+
+After editable installation, PyDynamicForest provides command-line entry points.
+
+Recommended commands include:
+
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+    pydf-plot-observations --input-dir outputs\baseline_short_cli
+
+    pydf-plot-observation-comparisons --input-dir outputs\baseline_short_cli
+
+    pydf-plot-diagnostics --input-file outputs\baseline_short_cli\time_series.csv
+
+    pydf-compare-reduced-reference
+
+The corresponding developer-style commands using `python -m` remain available.
+
+If the `pydf-*` commands are not found on Windows, verify that the `Scripts` directory of the environment is available in the `PATH`, or use the full executable path, for example:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\Scripts\pydf-run-baseline.exe --max-steps 10 --output-dir outputs\baseline_short_cli
+
+A temporary fix for the current terminal is:
+
+    set "CONDA_ENV=C:\Users\saintemarie\.conda\envs\pydynamicforest"
+    set "PATH=%CONDA_ENV%;%CONDA_ENV%\Scripts;%CONDA_ENV%\Library\bin;%PATH%"
+
+## Tests
+
+Run fast tests with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests
+
+Run slow tests with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
+
+Run the end-to-end CLI workflow test with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_end_to_end_cli.py -m e2e
+
+Run all tests, including slow tests, with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "slow or not slow"
+
+## Simulations
+
+Run the short baseline scenario with:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m simulations.baseline.run
+
+Run a configurable baseline simulation with:
+
+    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+
+Run the full reduced baseline with:
+
+    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+
+The solver is selected by default from the numerical parameters. It can be overridden explicitly:
+
+    pydf-run-baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
+
+The older explicit sparse baseline script is still available:
+
+    pydf-run-baseline-reduced-sparse
+
+or:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
+
+## Baseline scenario configuration
+
+The baseline scenario is configured through:
+
+    simulations/baseline/config.py
+
+This file centralizes the main values used by the baseline scenario:
+
+- stand ages;
+- initial condition;
+- physical scales;
+- numerical grid;
+- time discretization;
+- model coefficient laws;
+- solver configuration;
+- output and observation settings.
+
+The following builders read their values from this configuration:
+
+    build_initial_condition()
+    build_parameters()
+    build_context()
+
+This provides a first step toward more flexible scenario management while keeping the current scenario definition simple and explicit.
+
+## Validation against legacy references
+
+The original implementation is preserved in the `legacy/` directory.
+
+Compare the sparse refactored solver with the reduced legacy reference using:
+
+    pydf-compare-reduced-reference
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.compare_reduced_reference
+
+The comparison checks final top height, final basal area, final legacy mass, and minimum density over the trajectory.
+
+## Observation management
+
+The simulation context supports observation selection by stand age.
+
+Example: `observation_ages` can be set to 18.0, 45.0, and 69.0 with `save_full_trajectory` set to `False`.
+
+This avoids hard-coded indices such as:
+
+    U[5294,:,:]
+
+In PyDynamicForest, observations are simulated model states selected for storage and analysis at requested stand ages.
+They should not be confused with empirical field observations.
+
+## Output files
+
+Simulation outputs are written to the `outputs/` directory, which is ignored by Git.
+
+A typical output directory contains:
+
+    time_series.csv
+    metadata.json
+    summary.txt
+    observations/
+    figures/
+        observation_step_.../
+        comparisons/
+        time_series/
+
+The `observations/` directory contains exported `.npz` files for selected model observations.
+
+Each observation file contains:
+
+- `U`: simulated density field;
+- `time`: simulation time;
+- `age`: stand age;
+- `step_index`: numerical time-step index;
+- `height_grid`: normalized height grid;
+- `dbh_grid`: normalized DBH grid;
+- `height_grid_physical`: height grid in physical units;
+- `dbh_grid_physical`: DBH grid in physical units.
+
+## Plotting observations
+
+After running a simulation and exporting observations, standard figures can be generated with:
+
+    pydf-plot-observations --input-dir outputs\baseline_reduced_sparse
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse
+
+This command reads exported observations from:
+
+    outputs/baseline_reduced_sparse/observations/
+
+and writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/
+
+For each observation, the script currently generates:
+
+- a 2D density field;
+- a height distribution;
+- a DBH distribution.
+
+## Plotting observation comparisons
+
+After exporting observations, comparison figures across stand ages can be generated with:
+
+    pydf-plot-observation-comparisons --input-dir outputs\baseline_reduced_sparse
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse
+
+This command reads exported observations from:
+
+    outputs/baseline_reduced_sparse/observations/
+
+and writes comparison figures to:
+
+    outputs/baseline_reduced_sparse/figures/comparisons/
+
+The script currently generates:
+
+- height distribution comparisons;
+- DBH distribution comparisons;
+- density field comparisons.
+
+## Plotting diagnostic time series
+
+After running a simulation and exporting the time series, standard diagnostic figures can be generated with:
+
+    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
+
+or equivalently:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
+
+The command writes figures to:
+
+    outputs/baseline_reduced_sparse/figures/time_series/
+
+The script currently generates one figure for each of the following diagnostics:
+
+- total mass;
+- legacy mass;
+- minimum density;
+- top height;
+- basal area.
+
+By default, the x-axis is stand age.
+
+The input file and output directory can also be specified explicitly:
+
+    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv --figures-dir outputs\baseline_reduced_sparse\figures\time_series
+
+The x-axis can be changed from stand age to simulation time with:
+
+    pydf-plot-diagnostics --x-key time
+
+## Command reference
+
+A full command reference is available in:
+
+    COMMANDS.md
+
+## Refactor notes
+
+Detailed refactor notes are available in:
+
+    README_refactor.md
+
+## Current limitations
+
+The code is still under active refactoring.
+
+The dense solver is retained for regression checks but is computationally expensive.
+
+The sparse solver is preferred for practical runs.
+
+The distinction between legacy mass, trapezoidal mass, and scientific diagnostic mass has been clarified in the code, but the scientific interpretation of these conventions still needs to be reviewed.
+
+Quadrature conventions should continue to be harmonized across diagnostics.
+
+The current plotting workflow is functional but still provisional. A future visualization-quality improvement step is planned.
+
+Future scientific extensions such as recruitment, alternative mortality laws, alternative growth functions and alternative status definitions remain to be implemented.
+
+## Authors and contributors
+
+This code originates from the IDEAForDynamics project.
+
+### Original implementation
+
+- **Aymeric Jacob de Cordemoy** — original Python implementation and initial research code.
+
+### Scientific supervision and refactor
+
+- **Julien SAINTE-MARIE** — scientific supervision, conceptual restructuring, and current refactor toward a modular research code.
+- **Takeo TAKAHASHI** — scientific supervision.
+
+### IDEAForDynamics project members
+
+To be completed.
+
+Additional contributors can be added here as the project evolves.
+
+## Acknowledgements
+
+This work was supported by the interdisciplinary program ARTEMIS of Lorraine Université d'Excellence (ANR-15-IDEX-04-LUE).
+
+## License
+
+PyDynamicForest is distributed under the GNU Lesser General Public License v3.0 or later.
+
+SPDX-License-Identifier: LGPL-3.0-or-later
+
+This license allows PyDynamicForest to be used as a library by other software, including software distributed under different licenses, while requiring modifications to PyDynamicForest itself to remain available under the same LGPL terms.
