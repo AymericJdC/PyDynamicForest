@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 from dataclasses import replace
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -126,3 +127,154 @@ def test_evaluate_model_fields_supports_context_dependent_law():
     )
 
     assert np.allclose(fields.mortality, 0.3)
+
+def test_evaluate_model_fields_supports_derived_dependent_law():
+    x0 = build_initial_condition()
+    p = build_parameters()
+    c = build_context()
+
+    state = build_initial_state(x0, p, c)
+
+    status_field = np.zeros_like(state.U)
+
+    derived = SimpleNamespace(
+        total_mass=1234.0,
+        status_field=status_field,
+    )
+
+    def derived_dependent_mortality(
+        t,
+        x,
+        y,
+        state=None,
+        derived=None,
+        context=None,
+        parameters=None,
+    ):
+        return parameters["base"] + parameters["alpha"] * derived.total_mass
+
+    mortality_law = CoefficientLaw(
+        name="derived_dependent_mortality_test",
+        function=derived_dependent_mortality,
+        parameters={
+            "base": 0.1,
+            "alpha": 0.001,
+        },
+        units="1/year",
+    )
+
+    modified_model = replace(
+        p.model,
+        mortality_law=mortality_law,
+    )
+
+    modified_parameters = replace(
+        p,
+        model=modified_model,
+    )
+
+    fields = evaluate_state_model_fields(
+        modified_parameters,
+        state,
+        derived=derived,
+        context=c,
+    )
+
+    expected_mortality = 0.1 + 0.001 * 1234.0
+
+    assert np.allclose(fields.mortality, expected_mortality)
+
+
+def test_evaluate_model_fields_propagates_derived_status_field():
+    x0 = build_initial_condition()
+    p = build_parameters()
+    c = build_context()
+
+    state = build_initial_state(x0, p, c)
+
+    status_field = np.ones_like(state.U) * 0.75
+
+    derived = SimpleNamespace(
+        total_mass=1234.0,
+        status_field=status_field,
+    )
+
+    fields = evaluate_state_model_fields(
+        p,
+        state,
+        derived=derived,
+        context=c,
+    )
+
+    assert fields.status is not None
+    assert np.allclose(fields.status, status_field)
+
+
+def test_evaluate_model_fields_supports_local_derived_status_law():
+    x0 = build_initial_condition()
+    p = build_parameters()
+    c = build_context()
+
+    state = build_initial_state(x0, p, c)
+
+    grid = p.numerics.grid
+
+    status_field = np.zeros_like(state.U)
+
+    for i, x in enumerate(grid.x):
+        for j, y in enumerate(grid.y):
+            status_field[i, j] = x + y
+
+    derived = SimpleNamespace(
+        total_mass=1234.0,
+        status_field=status_field,
+    )
+
+    def status_dependent_height_growth(
+        t,
+        x,
+        y,
+        state=None,
+        derived=None,
+        context=None,
+        parameters=None,
+    ):
+        # Here we deliberately reconstruct the grid index from x and y
+        # for test purposes. This is not meant as a production pattern.
+        grid = parameters["grid"]
+
+        i = int(np.argmin(np.abs(grid.x - x)))
+        j = int(np.argmin(np.abs(grid.y - y)))
+
+        return parameters["base"] * (1.0 - derived.status_field[i, j])
+
+    height_growth_law = CoefficientLaw(
+        name="status_dependent_height_growth_test",
+        function=status_dependent_height_growth,
+        parameters={
+            "base": 0.5,
+            "grid": grid,
+        },
+        units="normalized_height/year",
+    )
+
+    modified_model = replace(
+        p.model,
+        height_growth_law=height_growth_law,
+    )
+
+    modified_parameters = replace(
+        p,
+        model=modified_model,
+    )
+
+    fields = evaluate_state_model_fields(
+        modified_parameters,
+        state,
+        derived=derived,
+        context=c,
+    )
+
+    expected_height_growth = 0.5 * (1.0 - status_field)
+
+    assert np.allclose(fields.height_growth, expected_height_growth)
