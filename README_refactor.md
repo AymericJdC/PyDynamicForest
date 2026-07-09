@@ -337,6 +337,14 @@ while remaining compatible with legacy laws of the form:
 
     law.function(t, x, y)
 
+The state-aware interface is currently tested with coefficient laws depending on:
+
+- the simulation context;
+- global derived quantities such as `derived.total_mass`;
+- local derived fields such as `derived.status_field`.
+
+These tests are intentionally kept outside the baseline scenario. They validate the future extension mechanism without changing the scientific model currently used by the validated baseline and legacy-regression workflows.
+
 At this stage, the state-aware interface is tested but is not yet used by the main solver. This avoids changing the numerical behavior validated against the legacy reference.
 
 Future state-dependent laws are expected to be introduced first as explicit dependencies on the current state `U^n`, before considering fully implicit nonlinear solves involving `U^{n+1}`.
