@@ -518,17 +518,15 @@ def evaluate_model_fields_for_solver(
     mode = getattr(p.numerics, "model_field_evaluation", "legacy")
 
     if mode == "legacy":
-        fields = evaluate_model_fields(p, state.time)
-        return model_fields_to_legacy_dict(fields)
+        return evaluate_model_fields(p, state.time)
 
     if mode == "state":
-        fields = evaluate_state_model_fields(
+        return evaluate_state_model_fields(
             p,
             state,
             derived=None,
             context=context,
         )
-        return model_fields_to_legacy_dict(fields)
 
     raise ValueError(
         f"Unknown model_field_evaluation mode: {mode}. "
