@@ -20,7 +20,7 @@ The `v0.2.0-refactor` tag corresponds to a modular technical refactor preserving
 
 Subsequent development may prepare or introduce model extensions, but these should be clearly separated from both:
 
-- the legacy implementation used for the initial manuscript submission;
+- the legacy implementation associated with the initial manuscript submission;
 - the validated technical refactor milestone.
 
 ## Conceptual architecture
@@ -570,12 +570,10 @@ Other current limitations include:
 
 The project uses Git tags to distinguish important scientific and technical states of the code.
 
-Current and planned tags include:
+Current tags include:
 
 - `v0.1.0-original`: original legacy implementation before the modular refactor;
-- `v1.0.0-submission-legacy`: legacy implementation used for the initial manuscript submission to the Journal of Mathematical Biology;
-- `v0.2.0-refactor`: modular technical refactor preserving the numerical behavior of the reduced legacy reference case;
-- future revision tags may be introduced if the refactored code is used during manuscript revision, resubmission or subsequent extensions.
+- `v0.2.0-refactor`: modular technical refactor preserving the numerical behavior of the reduced legacy reference case.
 
 The `legacy/` directory is currently kept for reproducibility, traceability and regression testing.
 
@@ -585,23 +583,17 @@ The current development branch follows `v0.2.0-refactor` and uses version:
 
 The current refactored implementation should be understood as a maintained and extensible reimplementation of the legacy code, not as the exact code version used for the initial manuscript submission.
 
+A specific traceability tag for the legacy code associated with the initial manuscript submission may be introduced later if the exact corresponding commit is confirmed and if such a tag is useful.
+
 Future versions may introduce explicit model extensions, such as nonlinear dependencies on the state variable `U`, derived quantities or the simulation context.
 
 ## Relation to the submitted manuscript
 
-The manuscript associated with PyDynamicForest was initially submitted to the Journal of Mathematical Biology using the legacy implementation.
+The manuscript associated with PyDynamicForest was initially submitted to the Journal of Mathematical Biology using the legacy Python implementation.
 
-The numerical simulations reported in the submitted manuscript were produced with the legacy Python code. The refactored implementation developed in this repository is intended to:
+The current refactored implementation is a modular technical reimplementation designed to improve maintainability, testing and extensibility while preserving the numerical behavior of validated legacy reference cases.
 
-- improve code structure and maintainability;
-- make the numerical workflow more reproducible;
-- add automated tests and regression checks;
-- preserve the behavior of validated legacy reference cases;
-- prepare future model extensions.
-
-The refactored implementation is therefore not presented as the exact code used for the initial manuscript submission. Instead, it is a modular and tested reimplementation designed to support reproducibility, future revisions and subsequent model development.
-
-If the refactored implementation is used in a manuscript revision or in future publications, a dedicated tag should be created to identify the exact version used.
+The refactored implementation should not be interpreted as the exact code version used for the initial manuscript submission unless explicitly stated by a dedicated tag or release.
 
 ## License
 
