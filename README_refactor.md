@@ -278,137 +278,150 @@ Available commands include:
 
 These are wrappers around the corresponding script modules.
 
-If the `pydf-*` commands are not found on Window*, check that the `Scripts` directo*y of the environment is available *n the `PATH`.
+If the `pydf-*` commands are not found on Windows, check that the `Scripts` directory of the environment is available in the `PATH`.
 
-## Solver selection*
-The simulation solver is selected*from the numerical parameters by d*fault.
+## Solver selection
+
+The simulation solver is selected from the numerical parameters by default.
 
 The standard API is:
 
-    *esults = simulate(x0, p, c)
+    results = simulate(x0, p, c)
 
-The e*fective one-step solver is selecte* from:
+The effective one-step solver is selected from:
 
-    p.numerics.matrix_stor*ge
+    p.numerics.matrix_storage
 
-Currently supported values are*
+Currently supported values are:
 
-- `"dense"`: dense legacy-like s*lver;
-- `"sparse"`: sparse legacy-*ike solver.
+- `"dense"`: dense legacy-like solver;
+- `"sparse"`: sparse legacy-like solver.
 
-For the baseline redu*ed scenario:
+For the baseline reduced scenario:
 
-    matrix_storage="*parse"
-    linear_solver="scipy.sp*rse.linalg.spsolve"
+    matrix_storage="sparse"
+    linear_solver="scipy.sparse.linalg.spsolve"
 
-For regressio* tests or debugging, the solver ca* still be explicitly overridden:
+For regression tests or debugging, the solver can still be explicitly overridden:
 
-*   results = simulate(x0, p, c, so*ver_name="dense")
+    results = simulate(x0, p, c, solver_name="dense")
 
 or:
 
-    result* = simulate(x0, p, c, solver_name=*sparse")
+    results = simulate(x0, p, c, solver_name="sparse")
 
-In addition to the dense*sparse solver choice, the numerica* parameters now also include a mod*l-field evaluation mode:
+In addition to the dense/sparse solver choice, the numerical parameters now also include a model-field evaluation mode:
 
-    mode*_field_evaluation="legacy"
+    model_field_evaluation="legacy"
 
-The de*ault value `"legacy"` preserves th* validated legacy-compatible evalu*tion pathway. The alternative valu* `"state"` is intended for future *evelopment of state-aware model la*s.
+The default value `"legacy"` preserves the validated legacy-compatible evaluation pathway. The alternative value `"state"` is intended for future development of state-aware model laws.
 
 ## Model field evaluation
 
-The*current code distinguishes several*model-field evaluation layers.
+The current code distinguishes several model-field evaluation layers.
 
-##* Legacy time-based interface
+### Legacy time-based interface
 
-The *egacy-compatible interface remains*available:
+The legacy-compatible interface remains available:
 
-    evaluate_model_fie*ds(p, time=...)
+    evaluate_model_fields(p, time=...)
 
-or equivalently i* the solver:
+or equivalently in the solver:
 
-    evaluate_model_f*elds(p, t_current)
+    evaluate_model_fields(p, t_current)
 
-This interface*preserves compatibility with the e*isting dense and sparse legacy-lik* solvers.
+This interface preserves compatibility with the existing dense and sparse legacy-like solvers.
 
-It is still the default*pathway used by the solver, throug* the configurable solver-side wrap*er described below.
+It is still the default pathway used by the solver, through the configurable solver-side wrapper described below.
 
-### State-awa*e interface
+### State-aware interface
 
-A state-aware and con*ext-aware model-field evaluation i*terface has been introduced:
+A state-aware and context-aware model-field evaluation interface has been introduced:
 
-    *valuate_state_model_fields(
-      * p,
+    evaluate_state_model_fields(
+        p,
         state,
-        derived*None,
+        derived=None,
         context=None,
     )
-*This function returns a `ModelFiel*s` object.
 
-It prepares future mod*l extensions where diffusion, mort*lity or growth laws may depend on:*
+This function returns a `ModelFields` object.
+
+It prepares future model extensions where diffusion, mortality or growth laws may depend on:
+
 - the current state `U`;
-- derive* quantities;
-- the simulation cont*xt.
+- derived quantities;
+- the simulation context.
 
-The interface is designed to *upport future laws with richer sig*atures such as:
+The interface is designed to support future laws with richer signatures such as:
 
-    law.function(*        t,
+    law.function(
+        t,
         x,
         y,
- *      state=state,
-        derived*derived,
+        state=state,
+        derived=derived,
         context=context,
-*       parameters=law.parameters,
-*   )
-
-while remaining compatible w*th legacy laws of the form:
-
-    l*w.function(t, x, y)
-
-The state-awa*e interface is currently tested wi*h coefficient laws depending on:
-
-* the simulation context;
-- global *erived quantities such as `derived*total_mass`;
-- local derived field* such as `derived.status_field`.
-
-*hese tests are intentionally kept *utside the baseline scenario. They*validate the future extension mech*nism without changing the scientif*c model currently used by the vali*ated baseline and legacy-regressio* workflows.
-
-### Solver-side model*field evaluation mode
-
-A solver-si*e wrapper has been introduced:
-
-  * evaluate_model_fields_for_solver(*        state,
-        p,
-        *ontext=None,
+        parameters=law.parameters,
     )
 
-This function *entralizes the choice between the *egacy and state-aware model-field *valuation pathways.
+while remaining compatible with legacy laws of the form:
 
-The choice is*controlled by:
+    law.function(t, x, y)
 
-    p.numerics.mod*l_field_evaluation
+The state-aware interface is currently tested with coefficient laws depending on:
 
-Currently supp*rted values are:
+- the simulation context;
+- global derived quantities such as `derived.total_mass`;
+- local derived fields such as `derived.status_field`.
 
-- `"legacy"`: us* the legacy time-based interface;
-* `"state"`: use the state-aware in*erface.
+These tests are intentionally kept outside the baseline scenario. They validate the future extension mechanism without changing the scientific model currently used by the validated baseline and legacy-regression workflows.
 
-The baseline configuratio* uses:
+### Solver-side model-field evaluation mode
 
-    model_field_evaluation*"legacy"
+A solver-side wrapper has been introduced:
 
-Therefore, the validated*numerical behavior remains unchang*d by default.
+    evaluate_model_fields_for_solver(
+        state,
+        p,
+        context=None,
+    )
 
-The `"state"` mode *s currently preparatory. It allows the solver infrastructure to be progressively migrated toward state-aware model laws, but should be used carefully because future dependencies on `U`, derived quantities or context may change the mathematical and numerical interpretation of the scheme.
+This function centralizes the choice between the legacy and state-aware model-field evaluation pathways.
 
-At the solver boundary, both modes currently return a legacy-compatible dictionary format. This is intentional: the dense and sparse legacy-like solvers still access fields as:
+The choice is controlled by:
 
-    fields["diffusion"]
-    fields["mortality"]
-    fields["height_growth"]
-    fields["dbh_growth"]
+    p.numerics.model_field_evaluation
 
-The state-aware model-field interface itself returns a `ModelFields` object, but `evaluate_model_fields_for_solver(...)` converts it to the current solver-compatible dictionary format. This allows the state-aware pathway to be tested without rewriting the solver internals immediately.
+Currently supported values are:
+
+- `"legacy"`: use the legacy time-based interface;
+- `"state"`: use the state-aware interface.
+
+The baseline configuration uses:
+
+    model_field_evaluation="legacy"
+
+Therefore, the validated numerical behavior remains unchanged by default.
+
+The `"state"` mode is currently preparatory. It allows the solver infrastructure to be progressively migrated toward state-aware model laws, but should be used carefully because future dependencies on `U`, derived quantities or context may change the mathematical and numerical interpretation of the scheme.
+
+At the solver boundary, the two modes now preserve their respective field formats:
+
+- the legacy mode returns the historical dictionary-based field representation;
+- the state mode returns a `ModelFields` object.
+
+The solver accesses coefficient fields through the adapter:
+
+    get_model_field(fields, name)
+
+This allows the current solver internals to handle both representations while progressively migrating away from direct dictionary-based field access.
+
+The helper:
+
+    model_fields_to_legacy_dict(fields)
+
+is still available when an explicit conversion to the legacy dictionary format is needed.
 
 The model-field evaluation mode can also be overridden from the command line:
 
@@ -572,7 +585,7 @@ Other current limitations include:
 - nonlinear dependencies on `U`, derived quantities or simulation context remain future model extensions;
 - the current solver uses `model_field_evaluation="legacy"` by default;
 - the `"state"` model-field evaluation mode is available for testing but remains preparatory;
-- the state-aware interface returns `ModelFields`, but the solver-side wrapper currently converts fields to the legacy dictionary format expected by the existing solvers;
+- the state-aware interface returns `ModelFields`, and the current solver can now access either dictionary-based fields or `ModelFields` through `get_model_field(...)`;
 - the current solver does not yet implement nonlinear fixed-point or Newton iterations.
 
 ## Versioning strategy
@@ -616,7 +629,7 @@ Recommended next steps:
 
 1. Continue improving scenario configuration.
 2. Keep the legacy time-based solver path stable until state-aware evaluation is fully validated.
-3. Prepare a controlled migration of the solver toward `evaluate_state_model_fields`.
+3. Prepare a controlled migration of the solver toward direct use of `ModelFields` where appropriate.
 4. Further consolidate CLI workflows.
 5. Further harmonize quadrature rules across diagnostics.
 6. Clarify the scientific meaning of diagnostic mass in future outputs and figures.

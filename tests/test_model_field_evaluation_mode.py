@@ -71,7 +71,7 @@ def test_solver_model_field_evaluation_legacy_mode_matches_expected_diffusion():
     assert np.allclose(fields["diffusion"], expected_diffusion)
 
 
-def test_solver_model_field_evaluation_state_mode_returns_legacy_compatible_dict():
+def test_solver_model_field_evaluation_state_mode_returns_model_fields():
     x0 = build_initial_condition()
     p = build_parameters()
     c = build_context()
@@ -97,39 +97,11 @@ def test_solver_model_field_evaluation_state_mode_returns_legacy_compatible_dict
         p.numerics.grid.ny,
     )
 
-    assert isinstance(fields, dict)
-
-    for name in [
-        "diffusion",
-        "mortality",
-        "height_growth",
-        "dbh_growth",
-    ]:
-        assert name in fields
-        assert fields[name].shape == expected_shape
-
-
-def test_solver_model_field_evaluation_unknown_mode_raises():
-    x0 = build_initial_condition()
-    p = build_parameters()
-    c = build_context()
-
-    state = build_initial_state(x0, p, c)
-
-    p = replace(
-        p,
-        numerics=replace(
-            p.numerics,
-            model_field_evaluation="unknown",
-        ),
-    )
-
-    with pytest.raises(ValueError, match="Unknown model_field_evaluation mode"):
-        evaluate_model_fields_for_solver(
-            state,
-            p,
-            context=c,
-        )
+    assert isinstance(fields, ModelFields)
+    assert fields.diffusion.shape == expected_shape
+    assert fields.mortality.shape == expected_shape
+    assert fields.height_growth.shape == expected_shape
+    assert fields.dbh_growth.shape == expected_shape
         
 def test_legacy_and_state_model_field_modes_match_for_baseline():
     """
@@ -175,7 +147,7 @@ def test_legacy_and_state_model_field_modes_match_for_baseline():
     )
 
     assert isinstance(legacy_fields, dict)
-    assert isinstance(state_fields, dict)
+    assert isinstance(state_fields, ModelFields)
 
     field_names = [
         "diffusion",

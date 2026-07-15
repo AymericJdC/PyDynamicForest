@@ -62,8 +62,8 @@ def compute_transport_legacy(
     J = derived.cumulative_distribution
     S = derived.status_field
 
-    Ch = fields["height_growth"]
-    Cd = fields["dbh_growth"]
+    Ch = get_model_field(fields, "height_growth")
+    Cd = get_model_field(fields, "dbh_growth")
 
     grid = p.numerics.grid
     nx = grid.nx
@@ -445,29 +445,48 @@ def assemble_sparse_legacy_system(
 
     return A.tocsr(), b
 
+def get_model_field(fields, name: str):
+    """
+    Return one model coefficient field from either the legacy dictionary
+    format or the state-aware ModelFields format.
+
+    This adapter allows the solver internals to be migrated progressively
+    from dictionary-based access:
+
+        fields["diffusion"]
+
+    toward attribute-based access:
+
+        fields.diffusion
+
+    without changing the numerical behavior.
+    """
+
+    if isinstance(fields, dict):
+        if name not in fields:
+            raise KeyError(f"Unknown model field: {name}")
+        return fields[name]
+
+    if hasattr(fields, name):
+        return getattr(fields, name)
+
+    raise KeyError(f"Unknown model field: {name}")
+
 def model_fields_to_legacy_dict(fields):
     """
     Convert model fields to the legacy dictionary format expected by
     the current dense and sparse legacy-like solvers.
-
-    The current solvers still access fields as:
-
-        fields["height_growth"]
-
-    The state-aware model-field interface returns a ModelFields object.
-    This adapter allows the solver to remain unchanged while testing the
-    state-aware evaluation pathway.
     """
 
     if isinstance(fields, dict):
         return fields
 
     return {
-        "diffusion": fields.diffusion,
-        "mortality": fields.mortality,
-        "height_growth": fields.height_growth,
-        "dbh_growth": fields.dbh_growth,
-        "status": fields.status,
+        "diffusion": get_model_field(fields, "diffusion"),
+        "mortality": get_model_field(fields, "mortality"),
+        "height_growth": get_model_field(fields, "height_growth"),
+        "dbh_growth": get_model_field(fields, "dbh_growth"),
+        "status": get_model_field(fields, "status"),
     }
 
 def evaluate_model_fields_for_solver(
@@ -499,17 +518,15 @@ def evaluate_model_fields_for_solver(
     mode = getattr(p.numerics, "model_field_evaluation", "legacy")
 
     if mode == "legacy":
-        fields = evaluate_model_fields(p, state.time)
-        return model_fields_to_legacy_dict(fields)
+        return evaluate_model_fields(p, state.time)
 
     if mode == "state":
-        fields = evaluate_state_model_fields(
+        return evaluate_state_model_fields(
             p,
             state,
             derived=None,
             context=context,
         )
-        return model_fields_to_legacy_dict(fields)
 
     raise ValueError(
         f"Unknown model_field_evaluation mode: {mode}. "
