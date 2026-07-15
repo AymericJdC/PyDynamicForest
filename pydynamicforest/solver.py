@@ -62,8 +62,8 @@ def compute_transport_legacy(
     J = derived.cumulative_distribution
     S = derived.status_field
 
-    Ch = fields["height_growth"]
-    Cd = fields["dbh_growth"]
+    Ch = get_model_field(fields, "height_growth")
+    Cd = get_model_field(fields, "dbh_growth")
 
     grid = p.numerics.grid
     nx = grid.nx
@@ -463,6 +463,8 @@ def get_model_field(fields, name: str):
     """
 
     if isinstance(fields, dict):
+        if name not in fields:
+            raise KeyError(f"Unknown model field: {name}")
         return fields[name]
 
     if hasattr(fields, name):
