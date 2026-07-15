@@ -12,6 +12,7 @@ from simulations.baseline.config import (
     make_baseline_config,
     make_short_debug_config,
     make_dense_debug_config,
+    make_state_debug_config,
 )
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
@@ -237,6 +238,7 @@ def test_available_baseline_presets_contains_expected_values():
         "baseline",
         "dense-debug",
         "short-debug",
+        "state-debug",
     ]
 
 
@@ -260,6 +262,18 @@ def test_make_short_debug_config():
     assert config["solver"]["matrix_storage"] == "sparse"
     assert config["output"]["observation_ages"] == [18.0, 19.0, 20.0]
 
+def test_make_state_debug_config():
+    config = make_state_debug_config()
+
+    assert config["name"] == "baseline_state_debug"
+    assert config["grid"]["nx"] == 10
+    assert config["grid"]["ny"] == 10
+    assert config["time"]["t_end"] == 2.0
+    assert config["time"]["n_steps"] == 20
+    assert config["ages"]["final_age"] == 20.0
+    assert config["solver"]["matrix_storage"] == "sparse"
+    assert config["solver"]["model_field_evaluation"] == "state"
+    assert config["output"]["observation_ages"] == [18.0, 19.0, 20.0]
 
 def test_make_dense_debug_config():
     config = make_dense_debug_config()
@@ -276,11 +290,13 @@ def test_build_baseline_config_from_preset():
     baseline = build_baseline_config_from_preset("baseline")
     short_debug = build_baseline_config_from_preset("short-debug")
     dense_debug = build_baseline_config_from_preset("dense-debug")
+    state_debug = build_baseline_config_from_preset("state-debug")
 
     assert baseline["name"] == "baseline_reduced"
     assert short_debug["name"] == "baseline_short_debug"
     assert dense_debug["name"] == "baseline_dense_debug"
-
+    assert state_debug["name"] == "baseline_state_debug"
+    assert state_debug["solver"]["model_field_evaluation"] == "state"
 
 def test_build_baseline_config_from_unknown_preset_raises():
     try:
@@ -343,3 +359,20 @@ def test_run_baseline_apply_cli_overrides_model_field_evaluation():
     updated = apply_cli_overrides(config, args)
 
     assert updated["solver"]["model_field_evaluation"] == "state"
+
+def test_state_debug_preset_simulation_runs():
+    config = build_baseline_config_from_preset("state-debug")
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert p.numerics.model_field_evaluation == "state"

@@ -197,11 +197,33 @@ def make_dense_debug_config():
 
     return config
 
+def make_state_debug_config() -> dict:
+    """
+    Return a lightweight state-aware debug configuration.
+
+    This preset is based on the short debug configuration but uses the
+    state-aware model-field evaluation pathway.
+
+    It is intended for testing and future model-law development. It should
+    not be considered the default validated production pathway.
+    """
+
+    config = make_short_debug_config()
+
+    config["name"] = "baseline_state_debug"
+    config["description"] = (
+        "State-aware debug version of the baseline reduced scenario."
+    )
+
+    config["solver"]["model_field_evaluation"] = "state"
+
+    return config
 
 BASELINE_PRESET_BUILDERS = {
     "baseline": make_baseline_config,
     "short-debug": make_short_debug_config,
     "dense-debug": make_dense_debug_config,
+    "state-debug": make_state_debug_config,
 }
 
 
