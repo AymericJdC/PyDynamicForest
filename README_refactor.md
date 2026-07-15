@@ -108,7 +108,10 @@ It prepares future model extensions in which coefficient fields may depend on th
     legacy/
     ├── DynamicForestModel_2D_legacy.py
     ├── DynamicForestModel_2D_reduced_reference.py
-    └── DynamicForestModel_2D_short_reference.py
+    ├── DynamicForestModel_2D_short_reference.py
+    └── article_submission/
+        ├── Modele2DImpliciteV3.py
+        └── README.md
 
     tests/
     reference_outputs/
@@ -586,6 +589,7 @@ Other current limitations include:
 - the current solver uses `model_field_evaluation="legacy"` by default;
 - the `"state"` model-field evaluation mode is available for testing but remains preparatory;
 - the state-aware interface returns `ModelFields`, and the current solver can now access either dictionary-based fields or `ModelFields` through `get_model_field(...)`;
+- the legacy script associated with the initially submitted manuscript is archived for traceability and is not part of the refactored package;
 - the current solver does not yet implement nonlinear fixed-point or Newton iterations.
 
 ## Versioning strategy
@@ -611,11 +615,19 @@ Future versions may introduce explicit model extensions, such as nonlinear depen
 
 ## Relation to the submitted manuscript
 
-The manuscript associated with PyDynamicForest was initially submitted to the Journal of Mathematical Biology using the legacy Python implementation.
+The manuscript associated with PyDynamicForest was initially submitted to the Journal of Mathematical Biology using a legacy Python implementation.
+
+A legacy script associated with the numerical simulations reported in the initially submitted manuscript is archived in:
+
+    legacy/article_submission/Modele2DImpliciteV3.py
+
+This file is kept for traceability. It is not part of the refactored `pydynamicforest` package and should not be modified directly.
 
 The current refactored implementation is a modular technical reimplementation designed to improve maintainability, testing and extensibility while preserving the numerical behavior of validated legacy reference cases.
 
 The refactored implementation should not be interpreted as the exact code version used for the initial manuscript submission unless explicitly stated by a dedicated tag or release.
+
+If a cleaned, executable or refactored reproduction of the submitted numerical scenario is needed later, it should be created as a separate file or scenario, rather than by modifying the archived legacy script.
 
 ## License
 

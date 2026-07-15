@@ -51,6 +51,10 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 - Tests comparing legacy and state model-field evaluation modes for the current baseline laws.
 - Tests comparing short simulations run with legacy and state model-field evaluation modes.
 - Tests for solver model-field adapters supporting both dictionary-based fields and `ModelFields`.
+- Archived manuscript-associated legacy script:
+
+      legacy/article_submission/Modele2DImpliciteV3.py
+
 - Documentation of the distinction between:
   - the legacy code associated with the initial manuscript submission;
   - the modular refactored implementation;
@@ -78,12 +82,19 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 - Documented that solver-side `"legacy"` and `"state"` modes preserve their respective field formats.
 - Documented the equivalence tests between legacy and state model-field evaluation modes.
 - Documented the short simulation comparison between legacy and state model-field evaluation modes.
-- Clarified that the manuscript associated with this codebase was initially submitted to the Journal of Mathematical Biology using the legacy Python implementation.
+- Documented the archived legacy script associated with the initially submitted manuscript.
+- Clarified that the manuscript associated with this codebase was initially submitted to the Journal of Mathematical Biology using a legacy Python implementation.
 - Clarified that the current refactored code is a modular technical reimplementation validated against reduced legacy reference cases, not the exact code version used for the initial manuscript submission unless explicitly stated by a dedicated tag or release.
 
 ### Notes
 
-The manuscript associated with this codebase was initially submitted to the Journal of Mathematical Biology using the legacy Python implementation.
+The manuscript associated with this codebase was initially submitted to the Journal of Mathematical Biology using a legacy Python implementation.
+
+A legacy script associated with the numerical simulations reported in the initially submitted manuscript is archived in:
+
+    legacy/article_submission/Modele2DImpliciteV3.py
+
+This archived script is kept for traceability. It is not part of the refactored `pydynamicforest` package and should not be modified directly.
 
 The current refactored code is a modular technical reimplementation validated against reduced legacy reference cases. It should not be interpreted as the exact code version used for the initial manuscript submission unless explicitly stated by a dedicated tag or release.
 
