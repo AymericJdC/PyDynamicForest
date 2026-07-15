@@ -161,6 +161,7 @@ Available presets are:
     baseline
     short-debug
     dense-debug
+    state-debug
 
 ### Default baseline preset
 
@@ -174,9 +175,15 @@ Available presets are:
 
     pydf-run-baseline --preset dense-debug --max-steps 2 --output-dir outputs\preset_dense_debug
 
+### State debug preset
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\preset_state_debug
+
+The state debug preset is a lightweight sparse debug configuration using the state-aware model-field evaluation pathway.
+
 The equivalent developer form is:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --output-dir outputs\preset_short_debug
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset state-debug --max-steps 5 --output-dir outputs\preset_state_debug
 
 ## 8. Baseline CLI overrides
 
@@ -214,11 +221,17 @@ Use the state-aware preparatory pathway:
 
     pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
 
+The same state-aware pathway can also be tested using the dedicated preset:
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\mfe_state_debug
+
 Equivalent developer commands are:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --model-field-evaluation legacy --max-steps 5 --output-dir outputs\mfe_legacy_debug
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset state-debug --max-steps 5 --output-dir outputs\mfe_state_debug
 
 The default mode is:
 
@@ -453,6 +466,10 @@ At the solver boundary, both modes currently return a legacy-compatible dictiona
 The `"state"` mode can be selected from the CLI:
 
     pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
+or through the dedicated preset:
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
 
 At this stage, the `"state"` mode is not the default production pathway.
 

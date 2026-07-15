@@ -159,7 +159,8 @@ Current presets are:
 
 - `baseline`: default reduced baseline scenario;
 - `short-debug`: lightweight sparse-solver debug scenario;
-- `dense-debug`: lightweight dense-solver debug scenario.
+- `dense-debug`: lightweight dense-solver debug scenario;
+- `state-debug`: lightweight sparse debug scenario using the state-aware model-field evaluation pathway.
 
 They can be selected from the command line:
 
@@ -169,11 +170,14 @@ They can be selected from the command line:
 
     pydf-run-baseline --preset dense-debug
 
+    pydf-run-baseline --preset state-debug
+
 Internally, presets are built from:
 
     make_baseline_config()
     make_short_debug_config()
     make_dense_debug_config()
+    make_state_debug_config()
     build_baseline_config_from_preset(...)
 
 Presets are generated from deep copies of `BASELINE_CONFIG`, so the default configuration is not mutated.
@@ -209,6 +213,10 @@ or:
 
     pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
 
+The `state-debug` preset provides a shortcut for a lightweight run using the state-aware evaluation pathway:
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\preset_state_debug
+
 These CLI overrides are applied to a deep copy of the selected preset.
 
 ## Configurable baseline run
@@ -232,6 +240,8 @@ Examples:
     pydf-run-baseline --preset short-debug --output-dir outputs\short_debug
 
     pydf-run-baseline --preset dense-debug --max-steps 2 --output-dir outputs\dense_debug
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
 
 By default, the solver is selected from the numerical parameters.
 
@@ -268,133 +278,128 @@ Available commands include:
 
 These are wrappers around the corresponding script modules.
 
-If the `pydf-*` commands are not found on Windows, check that the `Scripts` directory of the environment is available in the `PATH`.
+If the `pydf-*` commands are not found on Window*, check that the `Scripts` directo*y of the environment is available *n the `PATH`.
 
-## Solver selection
-
-The simulation solver is selected from the numerical parameters by default.
+## Solver selection*
+The simulation solver is selected*from the numerical parameters by d*fault.
 
 The standard API is:
 
-    results = simulate(x0, p, c)
+    *esults = simulate(x0, p, c)
 
-The effective one-step solver is selected from:
+The e*fective one-step solver is selecte* from:
 
-    p.numerics.matrix_storage
+    p.numerics.matrix_stor*ge
 
-Currently supported values are:
+Currently supported values are*
 
-- `"dense"`: dense legacy-like solver;
-- `"sparse"`: sparse legacy-like solver.
+- `"dense"`: dense legacy-like s*lver;
+- `"sparse"`: sparse legacy-*ike solver.
 
-For the baseline reduced scenario:
+For the baseline redu*ed scenario:
 
-    matrix_storage="sparse"
-    linear_solver="scipy.sparse.linalg.spsolve"
+    matrix_storage="*parse"
+    linear_solver="scipy.sp*rse.linalg.spsolve"
 
-For regression tests or debugging, the solver can still be explicitly overridden:
+For regressio* tests or debugging, the solver ca* still be explicitly overridden:
 
-    results = simulate(x0, p, c, solver_name="dense")
+*   results = simulate(x0, p, c, so*ver_name="dense")
 
 or:
 
-    results = simulate(x0, p, c, solver_name="sparse")
+    result* = simulate(x0, p, c, solver_name=*sparse")
 
-In addition to the dense/sparse solver choice, the numerical parameters now also include a model-field evaluation mode:
+In addition to the dense*sparse solver choice, the numerica* parameters now also include a mod*l-field evaluation mode:
 
-    model_field_evaluation="legacy"
+    mode*_field_evaluation="legacy"
 
-The default value `"legacy"` preserves the validated legacy-compatible evaluation pathway. The alternative value `"state"` is intended for future development of state-aware model laws.
+The de*ault value `"legacy"` preserves th* validated legacy-compatible evalu*tion pathway. The alternative valu* `"state"` is intended for future *evelopment of state-aware model la*s.
 
 ## Model field evaluation
 
-The current code distinguishes several model-field evaluation layers.
+The*current code distinguishes several*model-field evaluation layers.
 
-### Legacy time-based interface
+##* Legacy time-based interface
 
-The legacy-compatible interface remains available:
+The *egacy-compatible interface remains*available:
 
-    evaluate_model_fields(p, time=...)
+    evaluate_model_fie*ds(p, time=...)
 
-or equivalently in the solver:
+or equivalently i* the solver:
 
-    evaluate_model_fields(p, t_current)
+    evaluate_model_f*elds(p, t_current)
 
-This interface preserves compatibility with the existing dense and sparse legacy-like solvers.
+This interface*preserves compatibility with the e*isting dense and sparse legacy-lik* solvers.
 
-It is still the default pathway used by the solver, through the configurable solver-side wrapper described below.
+It is still the default*pathway used by the solver, throug* the configurable solver-side wrap*er described below.
 
-### State-aware interface
+### State-awa*e interface
 
-A state-aware and context-aware model-field evaluation interface has been introduced:
+A state-aware and con*ext-aware model-field evaluation i*terface has been introduced:
 
-    evaluate_state_model_fields(
-        p,
+    *valuate_state_model_fields(
+      * p,
         state,
-        derived=None,
+        derived*None,
         context=None,
     )
+*This function returns a `ModelFiel*s` object.
 
-This function returns a `ModelFields` object.
-
-It prepares future model extensions where diffusion, mortality or growth laws may depend on:
-
+It prepares future mod*l extensions where diffusion, mort*lity or growth laws may depend on:*
 - the current state `U`;
-- derived quantities;
-- the simulation context.
+- derive* quantities;
+- the simulation cont*xt.
 
-The interface is designed to support future laws with richer signatures such as:
+The interface is designed to *upport future laws with richer sig*atures such as:
 
-    law.function(
-        t,
+    law.function(*        t,
         x,
         y,
-        state=state,
-        derived=derived,
+ *      state=state,
+        derived*derived,
         context=context,
-        parameters=law.parameters,
-    )
+*       parameters=law.parameters,
+*   )
 
-while remaining compatible with legacy laws of the form:
+while remaining compatible w*th legacy laws of the form:
 
-    law.function(t, x, y)
+    l*w.function(t, x, y)
 
-The state-aware interface is currently tested with coefficient laws depending on:
+The state-awa*e interface is currently tested wi*h coefficient laws depending on:
 
-- the simulation context;
-- global derived quantities such as `derived.total_mass`;
-- local derived fields such as `derived.status_field`.
+* the simulation context;
+- global *erived quantities such as `derived*total_mass`;
+- local derived field* such as `derived.status_field`.
 
-These tests are intentionally kept outside the baseline scenario. They validate the future extension mechanism without changing the scientific model currently used by the validated baseline and legacy-regression workflows.
+*hese tests are intentionally kept *utside the baseline scenario. They*validate the future extension mech*nism without changing the scientif*c model currently used by the vali*ated baseline and legacy-regressio* workflows.
 
-### Solver-side model-field evaluation mode
+### Solver-side model*field evaluation mode
 
-A solver-side wrapper has been introduced:
+A solver-si*e wrapper has been introduced:
 
-    evaluate_model_fields_for_solver(
-        state,
+  * evaluate_model_fields_for_solver(*        state,
         p,
-        context=None,
+        *ontext=None,
     )
 
-This function centralizes the choice between the legacy and state-aware model-field evaluation pathways.
+This function *entralizes the choice between the *egacy and state-aware model-field *valuation pathways.
 
-The choice is controlled by:
+The choice is*controlled by:
 
-    p.numerics.model_field_evaluation
+    p.numerics.mod*l_field_evaluation
 
-Currently supported values are:
+Currently supp*rted values are:
 
-- `"legacy"`: use the legacy time-based interface;
-- `"state"`: use the state-aware interface.
+- `"legacy"`: us* the legacy time-based interface;
+* `"state"`: use the state-aware in*erface.
 
-The baseline configuration uses:
+The baseline configuratio* uses:
 
-    model_field_evaluation="legacy"
+    model_field_evaluation*"legacy"
 
-Therefore, the validated numerical behavior remains unchanged by default.
+Therefore, the validated*numerical behavior remains unchang*d by default.
 
-The `"state"` mode is currently preparatory. It allows the solver infrastructure to be progressively migrated toward state-aware model laws, but should be used carefully because future dependencies on `U`, derived quantities or context may change the mathematical and numerical interpretation of the scheme.
+The `"state"` mode *s currently preparatory. It allows the solver infrastructure to be progressively migrated toward state-aware model laws, but should be used carefully because future dependencies on `U`, derived quantities or context may change the mathematical and numerical interpretation of the scheme.
 
 At the solver boundary, both modes currently return a legacy-compatible dictionary format. This is intentional: the dense and sparse legacy-like solvers still access fields as:
 
@@ -412,6 +417,10 @@ The model-field evaluation mode can also be overridden from the command line:
 or:
 
     pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
+The `state-debug` preset provides a convenient shortcut for testing this pathway:
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
 
 For the current baseline laws, tests verify that the `"legacy"` and `"state"` model-field evaluation modes produce identical coefficient fields for:
 

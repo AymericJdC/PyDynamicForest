@@ -83,6 +83,8 @@ Recommended commands include:
 
     pydf-run-baseline --preset baseline --full --output-dir outputs\baseline_reduced_sparse
 
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
+
     pydf-plot-observations --input-dir outputs\baseline_reduced_sparse
 
     pydf-plot-observation-comparisons --input-dir outputs\baseline_reduced_sparse
@@ -142,6 +144,10 @@ Run the dense debug preset with:
 
     pydf-run-baseline --preset dense-debug --max-steps 2 --output-dir outputs\dense_debug
 
+Run the state-aware debug preset with:
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
+
 The solver is selected by default from the numerical parameters. It can still be overridden explicitly:
 
     pydf-run-baseline --preset short-debug --solver-name dense --max-steps 2 --output-dir outputs\dense_override
@@ -181,11 +187,12 @@ The builders can also accept a custom configuration dictionary, which allows cre
 
 ## Baseline presets
 
-The baseline configuration currently provides three presets:
+The baseline configuration currently provides four presets:
 
 - `baseline`: the default reduced baseline scenario;
 - `short-debug`: a lightweight sparse configuration for fast debugging;
-- `dense-debug`: a lightweight dense configuration for regression/debugging.
+- `dense-debug`: a lightweight dense configuration for regression/debugging;
+- `state-debug`: a lightweight sparse debug configuration using the state-aware model-field evaluation pathway.
 
 Examples:
 
@@ -194,6 +201,8 @@ Examples:
     pydf-run-baseline --preset short-debug --output-dir outputs\preset_short_debug
 
     pydf-run-baseline --preset dense-debug --max-steps 2 --output-dir outputs\preset_dense_debug
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\preset_state_debug
 
 Presets can be combined with CLI overrides, for example:
 
