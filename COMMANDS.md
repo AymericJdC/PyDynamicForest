@@ -75,7 +75,11 @@ A temporary fix for the current terminal is:
     git add <file_or_directory>
     git commit -m "Commit message"
 
-### Push the development branch
+### Push the current branch
+
+    git push
+
+### Push the development branch explicitly
 
     git push origin refactor-julien
 
@@ -118,7 +122,7 @@ Run it with:
 
 Run the tests related to model-field evaluation with:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_model_field_evaluation.py tests\test_model_field_evaluation_mode.py
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_model_field_evaluation.py tests\test_model_field_evaluation_mode.py tests\test_solver_model_field_adapters.py
 
 These tests check:
 
@@ -127,7 +131,8 @@ These tests check:
 - derived-dependent coefficient laws;
 - the solver-side selection between `"legacy"` and `"state"` model-field evaluation modes;
 - the equivalence of `"legacy"` and `"state"` model-field fields for the current baseline laws;
-- the equivalence of short simulations run with `"legacy"` and `"state"` model-field evaluation modes on the `short-debug` preset.
+- the equivalence of short simulations run with `"legacy"` and `"state"` model-field evaluation modes on the `short-debug` preset;
+- the model-field access adapter used by the solver to support both dictionary-based fields and `ModelFields`.
 
 ### Run all tests, including slow tests
 
@@ -461,7 +466,16 @@ This is intended for future model laws depending on:
 - derived quantities;
 - the simulation context.
 
-At the solver boundary, both modes currently return a legacy-compatible dictionary format, because the dense and sparse legacy-like solvers still access fields as dictionary entries.
+At the solver boundary, the two modes preserve their respective field formats:
+
+- `"legacy"` returns a dictionary-based field representation;
+- `"state"` returns a `ModelFields` object.
+
+The solver accesses fields using:
+
+    get_model_field(fields, name)
+
+This allows the current solver internals to support both dictionary-based fields and `ModelFields`.
 
 The `"state"` mode can be selected from the CLI:
 
@@ -528,7 +542,7 @@ A typical development cycle is:
     pydf-run-baseline --preset short-debug --output-dir outputs\short_debug
     git add <modified_files>
     git commit -m "Meaningful commit message"
-    git push origin refactor-julien
+    git push
 
 If the `pydf-*` commands are not available, use the explicit Python module form:
 
@@ -536,7 +550,7 @@ If the `pydf-*` commands are not available, use the explicit Python module form:
 
 For model-field interface checks, run:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_model_field_evaluation.py tests\test_model_field_evaluation_mode.py
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_model_field_evaluation.py tests\test_model_field_evaluation_mode.py tests\test_solver_model_field_adapters.py
 
 For deeper validation, run:
 

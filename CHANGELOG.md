@@ -11,7 +11,8 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 - Baseline configuration presets:
   - `baseline`;
   - `short-debug`;
-  - `dense-debug`.
+  - `dense-debug`;
+  - `state-debug`.
 - Command-line preset selection through:
 
       pydf-run-baseline --preset
@@ -26,6 +27,14 @@ The project follows a pragmatic semantic versioning scheme during the research-c
   - `--observation-ages`;
   - `--model-field-evaluation`.
 - `ModelFields` type for model coefficient fields evaluated on the numerical grid.
+- Solver model-field access adapter:
+
+      get_model_field(fields, name)
+
+- Explicit conversion helper:
+
+      model_fields_to_legacy_dict(fields)
+
 - State-aware model-field evaluation interface:
 
       evaluate_state_model_fields(...)
@@ -41,6 +50,7 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 - Tests for derived-dependent coefficient laws.
 - Tests comparing legacy and state model-field evaluation modes for the current baseline laws.
 - Tests comparing short simulations run with legacy and state model-field evaluation modes.
+- Tests for solver model-field adapters supporting both dictionary-based fields and `ModelFields`.
 - Documentation of the distinction between:
   - the legacy code associated with the initial manuscript submission;
   - the modular refactored implementation;
@@ -50,6 +60,9 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 - The configurable baseline runner can now select presets and override selected configuration values from the command line.
 - The solver now uses an intermediate model-field evaluation wrapper while preserving the legacy evaluation pathway by default.
+- The solver can now access model coefficient fields through `get_model_field(...)`, allowing it to handle both dictionary-based fields and `ModelFields`.
+- In `model_field_evaluation="legacy"` mode, `evaluate_model_fields_for_solver(...)` returns the historical dictionary-based field representation.
+- In `model_field_evaluation="state"` mode, `evaluate_model_fields_for_solver(...)` now returns a `ModelFields` object.
 - The state-aware model-field pathway is available for testing, but the default validated mode remains `"legacy"`.
 - The development line now explicitly distinguishes:
   - legacy submission-associated code;
@@ -61,6 +74,8 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 - Documented baseline presets and CLI overrides.
 - Documented the state-aware model-field evaluation interface.
 - Documented the configurable model-field evaluation mode.
+- Documented the solver field adapter `get_model_field(...)`.
+- Documented that solver-side `"legacy"` and `"state"` modes preserve their respective field formats.
 - Documented the equivalence tests between legacy and state model-field evaluation modes.
 - Documented the short simulation comparison between legacy and state model-field evaluation modes.
 - Clarified that the manuscript associated with this codebase was initially submitted to the Journal of Mathematical Biology using the legacy Python implementation.
