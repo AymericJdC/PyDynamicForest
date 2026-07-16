@@ -2,7 +2,10 @@
 
 from argparse import Namespace
 
-from scripts.run_baseline import apply_cli_overrides
+from scripts.run_baseline import ( 
+    apply_cli_overrides,
+    build_parser
+)
 
 from simulations.baseline.config import (
     BASELINE_CONFIG,
@@ -14,6 +17,7 @@ from simulations.baseline.config import (
     make_dense_debug_config,
     make_state_debug_config,
 )
+
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
@@ -376,3 +380,20 @@ def test_state_debug_preset_simulation_runs():
 
     assert results.final_state.step_index == 2
     assert p.numerics.model_field_evaluation == "state"
+
+def test_run_baseline_parser_accepts_progress_flag():
+    parser = build_parser()
+
+    args = parser.parse_args(
+        [
+            "--preset",
+            "short-debug",
+            "--progress",
+            "--max-steps",
+            "2",
+            "--output-dir",
+            "outputs/test_progress",
+        ]
+    )
+
+    assert args.progress is True

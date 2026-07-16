@@ -41,7 +41,8 @@ classifiers = [
 dependencies = [
     "numpy",
     "scipy",
-    "matplotlib"
+    "matplotlib",
+    "tqdm>=4.66",
 ]
 
 [project.optional-dependencies]
