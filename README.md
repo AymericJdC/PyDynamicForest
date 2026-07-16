@@ -59,6 +59,7 @@ Main dependencies:
 - numpy;
 - scipy;
 - matplotlib;
+- tqdm;
 - pytest.
 
 ## Editable installation
@@ -81,9 +82,9 @@ Recommended commands include:
 
     pydf-run-baseline --preset short-debug --output-dir outputs\short_debug
 
-    pydf-run-baseline --preset baseline --full --output-dir outputs\baseline_reduced_sparse
+    pydf-run-baseline --preset baseline --full --progress --output-dir outputs\baseline_reduced_sparse
 
-    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
+    pydf-run-baseline --preset state-debug --progress --max-steps 5 --output-dir outputs\state_debug
 
     pydf-plot-observations --input-dir outputs\baseline_reduced_sparse
 
@@ -132,9 +133,9 @@ or equivalently:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset baseline --max-steps 10 --output-dir outputs\baseline_short_cli
 
-Run the full reduced baseline with:
+Run the full reduced baseline with a progress bar:
 
-    pydf-run-baseline --preset baseline --full --output-dir outputs\baseline_reduced_sparse
+    pydf-run-baseline --preset baseline --full --progress --output-dir outputs\baseline_reduced_sparse
 
 Run the short debug preset with:
 
@@ -146,7 +147,13 @@ Run the dense debug preset with:
 
 Run the state-aware debug preset with:
 
-    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
+    pydf-run-baseline --preset state-debug --progress --max-steps 5 --output-dir outputs\state_debug
+
+The optional progress bar can be enabled with:
+
+    --progress
+
+The progress bar is disabled by default to keep tests, automated workflows and scripted runs quiet unless explicitly requested.
 
 The solver is selected by default from the numerical parameters. It can still be overridden explicitly:
 
@@ -202,7 +209,7 @@ Examples:
 
     pydf-run-baseline --preset dense-debug --max-steps 2 --output-dir outputs\preset_dense_debug
 
-    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\preset_state_debug
+    pydf-run-baseline --preset state-debug --progress --max-steps 5 --output-dir outputs\preset_state_debug
 
 Presets can be combined with CLI overrides, for example:
 
@@ -222,6 +229,7 @@ Available configuration override options include:
     --final-age
     --observation-ages
     --model-field-evaluation
+    --progress
 
 For example, run a small grid debug simulation with:
 
@@ -243,11 +251,15 @@ or:
 
     pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
 
-The default mode is:
+Enable a progress bar explicitly:
+
+    pydf-run-baseline --preset short-debug --progress --max-steps 5 --output-dir outputs\progress_debug
+
+The default model-field evaluation mode is:
 
     --model-field-evaluation legacy
 
-The `state` mode is preparatory. It evaluates model fields through the state-aware interface, while the current solver still receives fields in a legacy-compatible format.
+The `state` mode is preparatory. It evaluates model fields through the state-aware interface, while the current solver supports both dictionary-based fields and `ModelFields`.
 
 These overrides modify a copy of the baseline configuration for the current run only. The file `simulations/baseline/config.py` is not modified.
 

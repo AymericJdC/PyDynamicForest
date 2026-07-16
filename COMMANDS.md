@@ -331,7 +331,25 @@ The default mode is:
 
 The `"state"` mode is intended for testing the future state-aware model-law interface. It is not yet the default production pathway.
 
-Available override options are:
+### Show simulation progress
+
+A progress bar can be enabled explicitly with:
+
+    --progress
+
+Examples:
+
+    pydf-run-baseline --preset short-debug --progress --max-steps 5 --output-dir outputs\progress_short_debug
+
+    pydf-run-baseline --preset baseline --full --progress --output-dir outputs\baseline_progress
+
+Equivalent developer command:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset state-debug --progress --max-steps 5 --output-dir outputs\progress_state_debug
+
+The progress bar is disabled by default. This keeps tests, CI logs and scripted workflows quiet unless progress display is explicitly requested.
+
+Available override and run options include:
 
     --nx
     --ny
@@ -341,6 +359,7 @@ Available override options are:
     --final-age
     --observation-ages
     --model-field-evaluation
+    --progress
 
 These options modify a copy of the selected preset for the current run only.
 
@@ -350,9 +369,17 @@ These options modify a copy of the selected preset for the current run only.
 
     pydf-run-baseline --preset baseline --max-steps 10 --output-dir outputs\baseline_short_cli
 
+### Run a configurable short baseline simulation with progress
+
+    pydf-run-baseline --preset baseline --max-steps 10 --progress --output-dir outputs\baseline_short_cli_progress
+
 ### Run the full reduced baseline
 
     pydf-run-baseline --preset baseline --full --output-dir outputs\baseline_reduced_sparse
+
+### Run the full reduced baseline with progress
+
+    pydf-run-baseline --preset baseline --full --progress --output-dir outputs\baseline_reduced_sparse_progress
 
 ### Override the solver explicitly
 
@@ -492,6 +519,16 @@ where:
 - `c` is a `SimulationContext`;
 - `results` is a `SimulationResults` object.
 
+The simulation API supports an optional progress display:
+
+    results = simulate(x0, p, c, progress=True)
+
+The default is:
+
+    progress=False
+
+This preserves silent behavior in tests and automated workflows.
+
 ### Solver selection
 
 The recommended simulation call is:
@@ -614,6 +651,18 @@ rather than:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe scripts\run_baseline.py
 
+### `ModuleNotFoundError: No module named 'tqdm'`
+
+The optional progress bar requires `tqdm`.
+
+If this error appears after pulling recent changes, reinstall the package with development dependencies:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e ".[dev]"
+
+or install `tqdm` directly:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install "tqdm>=4.66"
+
 ### Matplotlib / Tk issue
 
 Plotting uses the non-interactive `Agg` backend in `pydynamicforest/plotting.py`.
@@ -634,6 +683,10 @@ A typical development cycle is:
 If the `pydf-*` commands are not available, use the explicit Python module form:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --output-dir outputs\short_debug
+
+For runs where visual feedback is useful, enable progress display explicitly:
+
+    pydf-run-baseline --preset short-debug --progress --output-dir outputs\short_debug_progress
 
 For model-field interface checks, run:
 

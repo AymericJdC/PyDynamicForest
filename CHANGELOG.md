@@ -8,6 +8,15 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Added
 
+- Optional simulation progress bar through the Python API:
+
+      simulate(..., progress=True)
+
+- Command-line progress display option:
+
+      pydf-run-baseline --progress
+
+- `tqdm` dependency for optional progress display.
 - Basic GitHub Actions workflow for running automated validation.
 - GitHub Actions `quality` job for:
   - package import check;
@@ -31,7 +40,8 @@ The project follows a pragmatic semantic versioning scheme during the research-c
   - `--initial-age`;
   - `--final-age`;
   - `--observation-ages`;
-  - `--model-field-evaluation`.
+  - `--model-field-evaluation`;
+  - `--progress`.
 - `ModelFields` type for model coefficient fields evaluated on the numerical grid.
 - Solver model-field access adapter:
 
@@ -57,6 +67,8 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 - Tests comparing legacy and state model-field evaluation modes for the current baseline laws.
 - Tests comparing short simulations run with legacy and state model-field evaluation modes.
 - Tests for solver model-field adapters supporting both dictionary-based fields and `ModelFields`.
+- Tests for simulations with progress display enabled and disabled.
+- Test for parsing the `--progress` command-line flag.
 - Archived manuscript-associated legacy script:
 
       legacy/article_submission/Modele2DImpliciteV3.py
@@ -68,6 +80,9 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Changed
 
+- The simulation API can now optionally show progress during time stepping.
+- The baseline CLI can now explicitly enable progress display with `--progress`.
+- The progress bar is disabled by default to preserve silent behavior in tests, CI and scripted workflows.
 - The GitHub Actions test workflow now separates import/syntax checks from the fast test suite.
 - The GitHub Actions workflow now supports manual dispatch from the GitHub interface.
 - The GitHub Actions workflow uses pip caching through `actions/setup-python`.
@@ -84,6 +99,9 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Documentation
 
+- Documented the optional simulation progress bar.
+- Documented the `--progress` command-line option.
+- Documented that progress display is disabled by default.
 - Documented the expanded GitHub Actions test workflow.
 - Documented the CI `quality` and `tests` jobs.
 - Documented the manual CI trigger through `workflow_dispatch`.
