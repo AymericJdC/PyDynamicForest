@@ -3,3 +3,4 @@ numpy
 scipy
 matplotlib
 pytest
+tqdm>=4.66

@@ -642,6 +642,30 @@ def advance_one_step_sparse_legacy(
         step_index=state.step_index + 1,
     )
 
+def make_progress_iterator(
+    iterable,
+    progress: bool = False,
+    total: int | None = None,
+    desc: str = "Simulating",
+):
+    """
+    Return an iterator, optionally wrapped in a tqdm progress bar.
+
+    The progress bar is disabled by default to preserve silent behavior
+    in tests, scripts and non-interactive workflows.
+    """
+
+    if not progress:
+        return iterable
+
+    from tqdm import tqdm
+
+    return tqdm(
+        iterable,
+        total=total,
+        desc=desc,
+        unit="step",
+    )
 
 def should_save_observation(
     state: State,
@@ -705,6 +729,7 @@ def simulate(
     c: SimulationContext,
     max_steps: int | None = None,
     solver_name: str | None = None,
+    progress: bool = False,
 ) -> SimulationResults:
     """
     Run a simulation from an InitialCondition, Parameters and SimulationContext.
@@ -780,7 +805,14 @@ def simulate(
 
     record_state(state)
 
-    for _ in range(n_steps):
+    step_iterator = make_progress_iterator(
+        range(n_steps),
+        progress=progress,
+        total=n_steps,
+        desc="Simulating",
+    )
+
+    for _ in step_iterator:
         state = advance_one_step(state, p)
         record_state(state)
 

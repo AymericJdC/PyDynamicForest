@@ -49,3 +49,34 @@ def test_simulate_uses_solver_from_numerical_parameters():
     assert results.metadata["solver"] == "sparse_legacy"
     assert results.metadata["solver_requested"] is None
     assert results.metadata["matrix_storage"] == "sparse"
+    
+def test_simulate_runs_with_progress_disabled():
+    x0 = build_initial_condition()
+    p = build_parameters()
+    c = build_context()
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+        progress=False,
+    )
+
+    assert results.final_state.step_index == 2
+
+
+def test_simulate_runs_with_progress_enabled():
+    x0 = build_initial_condition()
+    p = build_parameters()
+    c = build_context()
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+        progress=True,
+    )
+
+    assert results.final_state.step_index == 2

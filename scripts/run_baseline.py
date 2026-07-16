@@ -68,6 +68,12 @@ def build_parser() -> ArgumentParser:
         ),
     )
 
+    parser.add_argument(
+        "--progress",
+        action="store_true",
+        help="Show a progress bar during the simulation.",
+    )
+
     run_group.add_argument(
         "--full",
         action="store_true",
@@ -245,6 +251,7 @@ def main() -> None:
         c,
         max_steps=max_steps,
         solver_name=args.solver_name,
+        progress=args.progress,
     )
 
     elapsed = perf_counter() - start
@@ -262,6 +269,7 @@ def main() -> None:
     print("Run configuration:")
     print(f" preset = {args.preset}")
     print(f"  output_dir        = {args.output_dir}")
+    print(f"  progress          = {args.progress}")
     print(f"  full_run          = {args.full}")
     print(f"  max_steps         = {max_steps}")
     print(f"  solver_override   = {args.solver_name}")
