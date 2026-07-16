@@ -91,6 +91,26 @@ A temporary fix for the current terminal is:
 
     git diff path\to\file.py
 
+### Create a feature branch
+
+    git checkout refactor-julien
+    git pull origin refactor-julien
+    git checkout -b feature/name-of-feature
+    git push -u origin feature/name-of-feature
+
+### Merge a completed feature branch
+
+    git checkout refactor-julien
+    git pull origin refactor-julien
+    git merge --no-ff feature/name-of-feature -m "Merge feature description"
+    git push origin refactor-julien
+
+### Delete a merged feature branch
+
+    git branch -d feature/name-of-feature
+    git push origin --delete feature/name-of-feature
+    git fetch --prune
+
 ## 5. Tests
 
 ### Run the fast test suite
@@ -142,7 +162,32 @@ These tests check:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_baseline_config.py
 
-## 6. Baseline scenario configuration
+## 6. GitHub Actions CI
+
+A basic GitHub Actions workflow is available in:
+
+    .github/workflows/tests.yml
+
+It runs the fast test suite automatically on selected pushes and pull requests.
+
+The workflow installs the package in editable mode with development dependencies:
+
+    python -m pip install -e ".[dev]"
+
+and runs:
+
+    python -m pytest tests
+
+Slow tests and end-to-end tests remain manual validation steps.
+
+The workflow is intentionally minimal:
+
+- no secrets;
+- no release or publication step;
+- read-only repository permissions;
+- fast tests only.
+
+## 7. Baseline scenario configuration
 
 The baseline scenario values are centralized in:
 
@@ -159,7 +204,7 @@ The baseline builders can accept a custom configuration dictionary:
 
 This allows scenario variants without duplicating the baseline files.
 
-## 7. Baseline presets
+## 8. Baseline presets
 
 Available presets are:
 
@@ -190,7 +235,7 @@ The equivalent developer form is:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset state-debug --max-steps 5 --output-dir outputs\preset_state_debug
 
-## 8. Baseline CLI overrides
+## 9. Baseline CLI overrides
 
 The configurable baseline runner accepts selected configuration overrides.
 
@@ -257,7 +302,7 @@ Available override options are:
 
 These options modify a copy of the selected preset for the current run only.
 
-## 9. Baseline simulations
+## 10. Baseline simulations
 
 ### Run a configurable short baseline simulation
 
@@ -281,7 +326,7 @@ or:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline_reduced_sparse
 
-## 10. Legacy references
+## 11. Legacy references
 
 ### Run the short legacy reference
 
@@ -293,7 +338,7 @@ or:
 
 Warning: the reduced legacy reference uses the dense legacy solver and may be slower than the refactored sparse solver.
 
-## 11. Comparisons and validation
+## 12. Comparisons and validation
 
 ### Compare sparse refactor with reduced legacy reference
 
@@ -312,7 +357,7 @@ This compares:
 - final legacy mass;
 - minimum density over the trajectory.
 
-## 12. Observation exports
+## 13. Observation exports
 
 Selected model observations are exported as `.npz` files under:
 
@@ -328,7 +373,7 @@ Each observation file can be loaded in Python with:
     height_grid_physical = data["height_grid_physical"]
     dbh_grid_physical = data["dbh_grid_physical"]
 
-## 13. Plotting exported observations
+## 14. Plotting exported observations
 
 Recommended entry point:
 
@@ -338,7 +383,7 @@ Equivalent developer command:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observations --input-dir outputs\baseline_reduced_sparse
 
-## 14. Plotting observation comparisons
+## 15. Plotting observation comparisons
 
 Recommended entry point:
 
@@ -348,7 +393,7 @@ Equivalent developer command:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.plot_observation_comparisons --input-dir outputs\baseline_reduced_sparse
 
-## 15. Plotting diagnostic time series
+## 16. Plotting diagnostic time series
 
 Recommended entry point:
 
@@ -362,7 +407,7 @@ Use simulation time instead of stand age on the x-axis with:
 
     pydf-plot-diagnostics --x-key time
 
-## 16. Syntax checks
+## 17. Syntax checks
 
 ### Compile a single Python file
 
@@ -372,7 +417,7 @@ Use simulation time instead of stand age on the x-axis with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m compileall pydynamicforest
 
-## 17. Outputs
+## 18. Outputs
 
 Simulation outputs are currently written under:
 
@@ -392,7 +437,7 @@ Example:
         ├── comparisons/
         └── time_series/
 
-## 18. Development notes
+## 19. Development notes
 
 ### Main conceptual API
 
@@ -487,7 +532,7 @@ or through the dedicated preset:
 
 At this stage, the `"state"` mode is not the default production pathway.
 
-## 19. Common troubleshooting
+## 20. Common troubleshooting
 
 ### Python points to the wrong executable
 
@@ -533,7 +578,7 @@ Plotting uses the non-interactive `Agg` backend in `pydynamicforest/plotting.py`
 
 This avoids errors related to missing Tk libraries when generating figures in tests or batch runs.
 
-## 20. Recommended daily workflow
+## 21. Recommended daily workflow
 
 A typical development cycle is:
 

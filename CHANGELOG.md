@@ -8,6 +8,7 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Added
 
+- Basic GitHub Actions workflow for running the fast test suite automatically.
 - Baseline configuration presets:
   - `baseline`;
   - `short-debug`;
@@ -75,6 +76,7 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Documentation
 
+- Documented the basic GitHub Actions test workflow.
 - Documented baseline presets and CLI overrides.
 - Documented the state-aware model-field evaluation interface.
 - Documented the configurable model-field evaluation mode.
