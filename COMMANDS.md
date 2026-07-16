@@ -164,28 +164,70 @@ These tests check:
 
 ## 6. GitHub Actions CI
 
-A basic GitHub Actions workflow is available in:
+A GitHub Actions workflow is available in:
 
     .github/workflows/tests.yml
 
-It runs the fast test suite automatically on selected pushes and pull requests.
+It is intentionally focused on lightweight validation and currently defines two jobs:
 
-The workflow installs the package in editable mode with development dependencies:
+- `quality`: import and syntax checks;
+- `tests`: fast test suite.
+
+The workflow runs on selected pushes and pull requests, and can also be triggered manually from the GitHub Actions interface through `workflow_dispatch`.
+
+### Automatic triggers
+
+The workflow is triggered on pushes to:
+
+    refactor-julien
+    feature/**
+
+It is also triggered on pull requests targeting:
+
+    refactor-julien
+    main
+
+### Quality job
+
+The `quality` job:
+
+- checks out the repository;
+- sets up Python 3.11;
+- installs the package in editable mode with development dependencies;
+- checks that the package imports successfully;
+- compiles the main package and support modules.
+
+The commands performed are equivalent to:
 
     python -m pip install -e ".[dev]"
+    python -c "import pydynamicforest; print(pydynamicforest)"
+    python -m compileall pydynamicforest simulations scripts
 
-and runs:
+### Fast test job
+
+The `tests` job depends on the successful completion of the `quality` job.
+
+It installs the package in editable mode with development dependencies and runs:
 
     python -m pytest tests
 
-Slow tests and end-to-end tests remain manual validation steps.
+### CI scope
 
 The workflow is intentionally minimal:
 
 - no secrets;
 - no release or publication step;
 - read-only repository permissions;
+- Python 3.11 only;
 - fast tests only.
+
+Slow tests and end-to-end tests remain manual validation steps.
+
+Run them locally when deeper validation is needed:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_end_to_end_cli.py -m e2e
 
 ## 7. Baseline scenario configuration
 

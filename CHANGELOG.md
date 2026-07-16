@@ -8,7 +8,12 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Added
 
-- Basic GitHub Actions workflow for running the fast test suite automatically.
+- Basic GitHub Actions workflow for running automated validation.
+- GitHub Actions `quality` job for:
+  - package import check;
+  - Python compilation check of `pydynamicforest`, `simulations` and `scripts`.
+- GitHub Actions `tests` job for running the fast test suite automatically.
+- Manual GitHub Actions trigger through `workflow_dispatch`.
 - Baseline configuration presets:
   - `baseline`;
   - `short-debug`;
@@ -63,6 +68,9 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Changed
 
+- The GitHub Actions test workflow now separates import/syntax checks from the fast test suite.
+- The GitHub Actions workflow now supports manual dispatch from the GitHub interface.
+- The GitHub Actions workflow uses pip caching through `actions/setup-python`.
 - The configurable baseline runner can now select presets and override selected configuration values from the command line.
 - The solver now uses an intermediate model-field evaluation wrapper while preserving the legacy evaluation pathway by default.
 - The solver can now access model coefficient fields through `get_model_field(...)`, allowing it to handle both dictionary-based fields and `ModelFields`.
@@ -76,7 +84,10 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Documentation
 
-- Documented the basic GitHub Actions test workflow.
+- Documented the expanded GitHub Actions test workflow.
+- Documented the CI `quality` and `tests` jobs.
+- Documented the manual CI trigger through `workflow_dispatch`.
+- Documented that slow tests and end-to-end tests remain manual validation steps.
 - Documented baseline presets and CLI overrides.
 - Documented the state-aware model-field evaluation interface.
 - Documented the configurable model-field evaluation mode.
