@@ -15,9 +15,9 @@ from copy import deepcopy
 ARTICLE_SUBMISSION_CONFIG = {
     "name": "article_submission_legacy",
     "description": (
-        "Baseline reduced scenario corresponding to the reduced legacy "
-        "reference case. The scenario runs from stand age 18 to stand age 69 "
-        "on a 20 x 20 normalized height-DBH grid."
+        "Manuscript-associated legacy scenario transcribed from "
+        "Modele2DImpliciteV3.py. The scenario runs from stand age 18 to "
+        "stand age 69 on a 40 x 40 normalized height-DBH grid."
     ),
 
     # ------------------------------------------------------------------

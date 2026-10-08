@@ -12,6 +12,9 @@ from simulations.article_submission_legacy.parameters import build_parameters
 def test_article_submission_configuration_matches_transmitted_script():
     config = ARTICLE_SUBMISSION_CONFIG
 
+    assert config["name"] == "article_submission_legacy"
+    assert "40 x 40" in config["description"]
+    assert "20 x 20" not in config["description"]
     assert config["ages"] == {"initial_age": 18.0, "final_age": 69.0}
     assert config["physical_scales"] == {"height_scale": 50.0, "dbh_scale": 1.0}
     assert config["grid"]["nx"] == 40
