@@ -20,6 +20,7 @@ from pydynamicforest.diagnostics import (
     minimum_density,
     physical_dbh_grid,
     physical_height_grid,
+    proportional_top_height,
     top_height,
     trapezoidal_mass,
 )
@@ -40,6 +41,9 @@ CSV_FIELDS = [
     "minimum_density",
     "top_height_current",
     "legacy_top_height",
+    "proportional_top_height",
+    "legacy_minus_proportional",
+    "current_minus_proportional",
     "top_height_difference",
     "basal_area",
     "threshold_dbh_index",
@@ -109,6 +113,7 @@ def diagnostic_row(state, p) -> dict:
 
     current_height = top_height(state.U, p)
     historical_height = legacy_top_height(state.U, p)
+    proportional_height = proportional_top_height(state.U, p)
     threshold = legacy_threshold_details(state.U, p)
 
     return {
@@ -120,6 +125,9 @@ def diagnostic_row(state, p) -> dict:
         "minimum_density": minimum_density(state.U),
         "top_height_current": current_height,
         "legacy_top_height": historical_height,
+        "proportional_top_height": proportional_height,
+        "legacy_minus_proportional": historical_height - proportional_height,
+        "current_minus_proportional": current_height - proportional_height,
         "top_height_difference": historical_height - current_height,
         "basal_area": basal_area(state.U, p),
         **threshold,
@@ -213,6 +221,10 @@ def run_article_submission_legacy(
                 "rectangular cell weights"
             ),
             "top_height_current": "current PyDynamicForest DBH-only stable sort",
+            "proportional_top_height": (
+                "100 largest-DBH stems/ha; uniform fraction of the threshold "
+                "DBH class; arithmetic height mean"
+            ),
         },
     }
 

@@ -211,6 +211,68 @@ def legacy_top_height(
 
     return height_sum / total_trees
 
+
+def proportional_top_height(
+    U: np.ndarray,
+    p: Parameters,
+    target_stems_per_ha: float = 100.0,
+) -> float:
+    """Compute DBH-threshold top height by proportional class selection.
+
+    Classes above the threshold are selected in full. Within the threshold
+    DBH class, the same fraction is applied to every height cell, preserving
+    its conditional height distribution and avoiding a height tie-break.
+
+    If fewer stems than the target are available, all positive-density cells
+    are used. An empty population returns NaN.
+    """
+    if target_stems_per_ha <= 0.0:
+        raise ValueError("target_stems_per_ha must be strictly positive.")
+
+    grid = p.numerics.grid
+    h_phys = physical_height_grid(p)
+
+    minimum = float(np.min(U))
+    tolerance = p.numerics.positivity_tolerance
+
+    if minimum < -tolerance:
+        raise ValueError(
+            "proportional_top_height requires a non-negative density. "
+            f"Minimum value: {minimum}."
+        )
+
+    non_negative_U = np.maximum(U, 0.0)
+    cell_stems = grid.dx * grid.dy * non_negative_U
+    stems_by_dbh = np.sum(cell_stems, axis=0)
+    total_available = float(np.sum(stems_by_dbh))
+
+    if total_available <= 0.0:
+        return float("nan")
+
+    effective_target = min(target_stems_per_ha, total_available)
+    selected_stems = 0.0
+    weighted_height = 0.0
+
+    for j in range(grid.ny - 1, -1, -1):
+        class_stems = float(stems_by_dbh[j])
+        if class_stems <= 0.0:
+            continue
+
+        remaining = effective_target - selected_stems
+        fraction = min(1.0, remaining / class_stems)
+        weighted_height += fraction * float(
+            np.sum(h_phys * cell_stems[:, j])
+        )
+        selected_stems += fraction * class_stems
+
+        if selected_stems >= effective_target:
+            break
+
+    if selected_stems <= 0.0:
+        return float("nan")
+
+    return weighted_height / selected_stems
+
 def minimum_density(U: np.ndarray) -> float:
     """
     Return the minimum density value.
