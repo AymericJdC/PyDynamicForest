@@ -231,7 +231,18 @@ def proportional_top_height(
 
     grid = p.numerics.grid
     h_phys = physical_height_grid(p)
-    cell_stems = grid.dx * grid.dy * np.maximum(U, 0.0)
+
+    minimum = float(np.min(U))
+    tolerance = p.numerics.positivity_tolerance
+
+    if minimum < -tolerance:
+        raise ValueError(
+            "proportional_top_height requires a non-negative density. "
+            f"Minimum value: {minimum}."
+        )
+
+    non_negative_U = np.maximum(U, 0.0)
+    cell_stems = grid.dx * grid.dy * non_negative_U
     stems_by_dbh = np.sum(cell_stems, axis=0)
     total_available = float(np.sum(stems_by_dbh))
 

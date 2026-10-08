@@ -72,3 +72,22 @@ def test_rejects_non_positive_target():
     p = make_parameters()
     with pytest.raises(ValueError, match='strictly positive'):
         proportional_top_height(np.ones((3, 3)), p, target_stems_per_ha=0.0)
+
+
+def test_accepts_roundoff_below_positivity_tolerance():
+    p = make_parameters()
+    U = np.zeros((3, 3), dtype=float)
+    U[1, 2] = density_for_stems(100.0, p)
+    U[0, 0] = -0.5 * p.numerics.positivity_tolerance
+
+    assert proportional_top_height(U, p) == pytest.approx(25.0)
+
+
+def test_rejects_density_below_positivity_tolerance():
+    p = make_parameters()
+    U = np.zeros((3, 3), dtype=float)
+    U[1, 2] = density_for_stems(100.0, p)
+    U[0, 0] = -2.0 * p.numerics.positivity_tolerance
+
+    with pytest.raises(ValueError, match="non-negative density"):
+        proportional_top_height(U, p)
