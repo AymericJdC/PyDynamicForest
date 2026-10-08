@@ -152,6 +152,65 @@ def top_height(
     return height_sum / total_trees
 
 
+
+def legacy_top_height(
+    U: np.ndarray,
+    p: Parameters,
+    target_stems_per_ha: float = 100.0,
+) -> float:
+    """Compute top height using the manuscript-associated legacy convention.
+
+    Cells are ordered lexicographically by decreasing physical DBH and then
+    by decreasing physical height, as in ``Modele2DImpliciteV3.py``. Each
+    cell represents ``dx * dy * U[i, j]`` stems per hectare. If the target is
+    reached inside the last selected cell, only the required fraction of that
+    cell is used. The returned value is the arithmetic mean physical height
+    of the selected stems.
+
+    This function is intentionally separate from :func:`top_height`. It exists
+    for traceable reproduction of the diagnostic used by the legacy script;
+    it does not define the revised dominant-height operator for future work.
+    """
+
+    if target_stems_per_ha <= 0.0:
+        raise ValueError("target_stems_per_ha must be strictly positive.")
+
+    grid = p.numerics.grid
+    h_phys = physical_height_grid(p)
+    d_phys = physical_dbh_grid(p)
+
+    cells: list[tuple[float, float, float]] = []
+
+    for i in range(grid.nx):
+        for j in range(grid.ny):
+            number_of_trees = float(grid.dx * grid.dy * U[i, j])
+
+            if number_of_trees > 0.0:
+                cells.append((d_phys[j], h_phys[i], number_of_trees))
+
+    if not cells:
+        return float("nan")
+
+    cells.sort(key=lambda cell: (cell[0], cell[1]), reverse=True)
+
+    total_trees = 0.0
+    height_sum = 0.0
+
+    for _dbh, height, number_trees in cells:
+        remaining = target_stems_per_ha - total_trees
+        used_trees = min(number_trees, remaining)
+
+        height_sum += used_trees * height
+        total_trees += used_trees
+
+        if total_trees >= target_stems_per_ha:
+            break
+
+    if total_trees <= 0.0:
+        return float("nan")
+
+    return height_sum / total_trees
+
 def minimum_density(U: np.ndarray) -> float:
     """
     Return the minimum density value.
