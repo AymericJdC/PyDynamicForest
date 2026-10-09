@@ -31,6 +31,51 @@ def flatten_index(i: int, j: int, ny: int) -> int:
 
     return i * ny + j
 
+def trapezoidal_weights_1d(
+    n_points: int,
+    spacing: float,
+) -> np.ndarray:
+    """Return dimensional one-dimensional trapezoidal quadrature weights.
+
+    The first and last nodes receive half weights, and interior nodes receive
+    full weights. The weights include ``spacing`` so their sum is the length
+    of a uniform grid interval.
+    """
+
+    if n_points < 2:
+        raise ValueError("At least two grid points are required.")
+    if spacing <= 0.0:
+        raise ValueError("Grid spacing must be strictly positive.")
+
+    weights = np.full(n_points, spacing, dtype=float)
+    weights[0] *= 0.5
+    weights[-1] *= 0.5
+    return weights
+
+
+def height_trapezoidal_weights(p: Parameters) -> np.ndarray:
+    """Return trapezoidal weights for the normalized height coordinate."""
+
+    grid = p.numerics.grid
+    return trapezoidal_weights_1d(grid.nx, grid.dx)
+
+
+def dbh_trapezoidal_weights(p: Parameters) -> np.ndarray:
+    """Return trapezoidal weights for the normalized DBH coordinate."""
+
+    grid = p.numerics.grid
+    return trapezoidal_weights_1d(grid.ny, grid.dy)
+
+
+def product_trapezoidal_weights(p: Parameters) -> np.ndarray:
+    """Return dimensional tensor-product weights in height-DBH axis order."""
+
+    return np.outer(
+        height_trapezoidal_weights(p),
+        dbh_trapezoidal_weights(p),
+    )
+
+
 def trapezoidal_weights_2d(nx: int, ny: int) -> np.ndarray:
     """
     Return 2D trapezoidal weights on a tensor-product grid.
