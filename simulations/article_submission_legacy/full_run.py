@@ -25,6 +25,12 @@ from pydynamicforest.diagnostics import (
     trapezoidal_mass,
 )
 from pydynamicforest.initial_conditions import build_initial_state
+from pydynamicforest.observation_operators import (
+    continuous_dominant_height_details,
+    mean_height,
+    quadratic_mean_dbh,
+    stand_density,
+)
 from pydynamicforest.solver import advance_one_step_sparse_legacy
 from simulations.article_submission_legacy.config import ARTICLE_SUBMISSION_CONFIG
 from simulations.article_submission_legacy.context import build_context
@@ -37,13 +43,20 @@ CSV_FIELDS = [
     "time",
     "age",
     "trapezoidal_mass",
+    "stand_density",
     "legacy_mass",
+    "mean_height",
+    "quadratic_mean_dbh_cm",
     "minimum_density",
     "top_height_current",
     "legacy_top_height",
     "proportional_top_height",
     "legacy_minus_proportional",
     "current_minus_proportional",
+    "continuous_top_height",
+    "continuous_threshold_dbh_cm",
+    "continuous_selected_stems",
+    "continuous_minus_proportional",
     "top_height_difference",
     "basal_area",
     "threshold_dbh_index",
@@ -114,6 +127,10 @@ def diagnostic_row(state, p) -> dict:
     current_height = top_height(state.U, p)
     historical_height = legacy_top_height(state.U, p)
     proportional_height = proportional_top_height(state.U, p)
+    continuous = continuous_dominant_height_details(
+        state.U,
+        p,
+    )
     threshold = legacy_threshold_details(state.U, p)
 
     return {
@@ -121,14 +138,38 @@ def diagnostic_row(state, p) -> dict:
         "time": state.time,
         "age": state.age,
         "trapezoidal_mass": trapezoidal_mass(state.U, p),
+        "stand_density": stand_density(state.U, p),
         "legacy_mass": legacy_mass(state.U, p),
+        "mean_height": mean_height(state.U, p),
+        "quadratic_mean_dbh_cm": quadratic_mean_dbh(
+            state.U,
+            p,
+            unit="cm",
+        ),
         "minimum_density": minimum_density(state.U),
         "top_height_current": current_height,
         "legacy_top_height": historical_height,
         "proportional_top_height": proportional_height,
         "legacy_minus_proportional": historical_height - proportional_height,
-        "current_minus_proportional": current_height - proportional_height,
-        "top_height_difference": historical_height - current_height,
+        "current_minus_proportional": (
+            current_height - proportional_height
+        ),
+        "continuous_top_height": continuous[
+            "dominant_height"
+        ],
+        "continuous_threshold_dbh_cm": (
+            100.0 * continuous["threshold_dbh"]
+        ),
+        "continuous_selected_stems": continuous[
+            "selected_stems"
+        ],
+        "continuous_minus_proportional": (
+            continuous["dominant_height"]
+            - proportional_height
+        ),
+        "top_height_difference": (
+            historical_height - current_height
+        ),
         "basal_area": basal_area(state.U, p),
         **threshold,
     }
@@ -224,6 +265,14 @@ def run_article_submission_legacy(
             "proportional_top_height": (
                 "100 largest-DBH stems/ha; uniform fraction of the threshold "
                 "DBH class; arithmetic height mean"
+            ),
+            "continuous_top_height": (
+                "piecewise-linear physical-DBH marginal and height-moment "
+                "tails using quadrature-consistent observation operators"
+            ),
+            "stand_density_mean_height_quadratic_mean_dbh": (
+                "tensor-product trapezoidal quadrature in normalized "
+                "height-DBH coordinates"
             ),
         },
     }
