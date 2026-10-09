@@ -44,6 +44,95 @@ from pydynamicforest.types import (
 )
 
 
+def compute_transport_components_legacy(
+    state: State,
+    p: Parameters,
+    derived,
+    fields: dict[str, np.ndarray],
+) -> dict[str, np.ndarray]:
+    """Return the separate legacy height and DBH transport divergences.
+
+    This diagnostic operator reproduces the same face velocities, status-
+    weighted upwind states, boundary omissions, and axis orientation as
+    :func:`compute_transport_legacy`. It does not replace the validated solver
+    pathway. The existing total transport remains computed by the original
+    legacy function, while this function exposes the two directional terms:
+
+        total = height + dbh
+
+    The returned arrays have the same shape and sign convention as the total
+    term used on the right-hand side ``U - dt * transport``.
+    """
+    U = state.U
+    J = derived.cumulative_distribution
+    S = derived.status_field
+    Ch = get_model_field(fields, "height_growth")
+    Cd = get_model_field(fields, "dbh_growth")
+    grid = p.numerics.grid
+    nx = grid.nx
+    ny = grid.ny
+    dx = grid.dx
+    dy = grid.dy
+    den = max(derived.total_mass, p.numerics.epsilon_zero_mass)
+
+    height_transport = np.zeros_like(U)
+    dbh_transport = np.zeros_like(U)
+
+    for i in range(nx):
+        for j in range(ny):
+            Sij = S[i, j]
+
+            height_flux_plus = 0.0
+            height_flux_minus = 0.0
+            dbh_flux_plus = 0.0
+            dbh_flux_minus = 0.0
+
+            if i < nx - 1:
+                height_face_velocity_plus = 0.5 * (Ch[i + 1, j] + Ch[i, j])
+                if height_face_velocity_plus >= 0.0:
+                    height_upwind_plus = Sij * U[i, j]
+                else:
+                    height_upwind_plus = (J[i + 1, j] / den) * U[i + 1, j]
+                height_flux_plus = height_face_velocity_plus * height_upwind_plus
+
+            if i > 0:
+                height_face_velocity_minus = 0.5 * (Ch[i, j] + Ch[i - 1, j])
+                if height_face_velocity_minus >= 0.0:
+                    height_upwind_minus = (J[i - 1, j] / den) * U[i - 1, j]
+                else:
+                    height_upwind_minus = Sij * U[i, j]
+                height_flux_minus = height_face_velocity_minus * height_upwind_minus
+
+            if j < ny - 1:
+                dbh_face_velocity_plus = 0.5 * (Cd[i, j + 1] + Cd[i, j])
+                if dbh_face_velocity_plus >= 0.0:
+                    dbh_upwind_plus = Sij * U[i, j]
+                else:
+                    dbh_upwind_plus = (J[i, j + 1] / den) * U[i, j + 1]
+                dbh_flux_plus = dbh_face_velocity_plus * dbh_upwind_plus
+
+            if j > 0:
+                dbh_face_velocity_minus = 0.5 * (Cd[i, j] + Cd[i, j - 1])
+                if dbh_face_velocity_minus >= 0.0:
+                    dbh_upwind_minus = (J[i, j - 1] / den) * U[i, j - 1]
+                else:
+                    dbh_upwind_minus = Sij * U[i, j]
+                dbh_flux_minus = dbh_face_velocity_minus * dbh_upwind_minus
+
+            height_transport[i, j] = (
+                height_flux_plus - height_flux_minus
+            ) / dx
+            dbh_transport[i, j] = (
+                dbh_flux_plus - dbh_flux_minus
+            ) / dy
+
+    return {
+        "height": height_transport,
+        "dbh": dbh_transport,
+        "total": height_transport + dbh_transport,
+    }
+
+
 def compute_transport_legacy(
     state: State,
     p: Parameters,
