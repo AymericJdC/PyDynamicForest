@@ -63,46 +63,181 @@ def stand_density(U: np.ndarray, p: Parameters) -> float:
     return float(np.sum(product_trapezoidal_weights(p) * density))
 
 
+def stand_moment(
+    U: np.ndarray,
+    p: Parameters,
+    *,
+    height_order: int = 0,
+    dbh_order: int = 0,
+    dbh_unit: str = "m",
+) -> float:
+    """Return an unnormalised physical joint moment of the stand density.
+
+    The operator computes
+
+        integral height**height_order * dbh**dbh_order * U dheight ddbh
+
+    using the tensor-product trapezoidal quadrature in normalized coordinates.
+    Height is expressed in metres. DBH may be expressed in metres or
+    centimetres through ``dbh_unit``. Order zero recovers stand density.
+    """
+    if not isinstance(height_order, int) or height_order < 0:
+        raise ValueError("height_order must be a non-negative integer.")
+    if not isinstance(dbh_order, int) or dbh_order < 0:
+        raise ValueError("dbh_order must be a non-negative integer.")
+
+    density = _validated_density(U, p)
+    height = physical_height_nodes(p)[:, None]
+    dbh = physical_dbh_nodes(p, unit=dbh_unit)[None, :]
+    integrand = height**height_order * dbh**dbh_order * density
+    return float(np.sum(product_trapezoidal_weights(p) * integrand))
+
+
+def height_moment(U: np.ndarray, p: Parameters, order: int = 1) -> float:
+    """Return the unnormalised physical height moment in m**order trees/ha."""
+    return stand_moment(U, p, height_order=order)
+
+
+def dbh_moment(
+    U: np.ndarray,
+    p: Parameters,
+    order: int = 1,
+    unit: str = "m",
+) -> float:
+    """Return the unnormalised physical DBH moment in the requested unit."""
+    return stand_moment(U, p, dbh_order=order, dbh_unit=unit)
+
+
+def height_dbh_cross_moment(
+    U: np.ndarray,
+    p: Parameters,
+    dbh_unit: str = "m",
+) -> float:
+    """Return the unnormalised height-DBH cross moment."""
+    return stand_moment(
+        U,
+        p,
+        height_order=1,
+        dbh_order=1,
+        dbh_unit=dbh_unit,
+    )
+
+
+def mean_dbh(U: np.ndarray, p: Parameters, unit: str = "m") -> float:
+    """Return arithmetic mean DBH in metres or centimetres."""
+    total = stand_density(U, p)
+    if total <= 0.0:
+        return float("nan")
+    return dbh_moment(U, p, order=1, unit=unit) / total
+
+
+def height_variance(U: np.ndarray, p: Parameters) -> float:
+    """Return population variance of physical height in square metres."""
+    total = stand_density(U, p)
+    if total <= 0.0:
+        return float("nan")
+    mean = height_moment(U, p, order=1) / total
+    return max(0.0, height_moment(U, p, order=2) / total - mean**2)
+
+
+def dbh_variance(U: np.ndarray, p: Parameters, unit: str = "m") -> float:
+    """Return population variance of DBH in the square of the requested unit."""
+    total = stand_density(U, p)
+    if total <= 0.0:
+        return float("nan")
+    mean = dbh_moment(U, p, order=1, unit=unit) / total
+    return max(0.0, dbh_moment(U, p, order=2, unit=unit) / total - mean**2)
+
+
+def height_dbh_covariance(
+    U: np.ndarray,
+    p: Parameters,
+    dbh_unit: str = "m",
+) -> float:
+    """Return population covariance between height and DBH."""
+    total = stand_density(U, p)
+    if total <= 0.0:
+        return float("nan")
+    mean_h = height_moment(U, p, order=1) / total
+    mean_d = dbh_moment(U, p, order=1, unit=dbh_unit) / total
+    return height_dbh_cross_moment(U, p, dbh_unit=dbh_unit) / total - mean_h * mean_d
+
+
+def height_dbh_correlation(U: np.ndarray, p: Parameters) -> float:
+    """Return the dimensionless population correlation of height and DBH."""
+    covariance = height_dbh_covariance(U, p, dbh_unit="m")
+    variance_h = height_variance(U, p)
+    variance_d = dbh_variance(U, p, unit="m")
+    denominator = np.sqrt(variance_h * variance_d)
+    if not np.isfinite(denominator) or denominator <= 0.0:
+        return float("nan")
+    return float(covariance / denominator)
+
+
+def joint_moment_summary(U: np.ndarray, p: Parameters) -> dict[str, float]:
+    """Return the consolidated physical moments used by stand diagnostics."""
+    total = stand_density(U, p)
+    if total <= 0.0:
+        nan = float("nan")
+        return {
+            "stand_density": 0.0,
+            "height_moment": 0.0,
+            "dbh_moment_m": 0.0,
+            "height_second_moment": 0.0,
+            "dbh_second_moment_m2": 0.0,
+            "height_dbh_cross_moment_m2": 0.0,
+            "mean_height": nan,
+            "mean_dbh_m": nan,
+            "height_variance_m2": nan,
+            "dbh_variance_m2": nan,
+            "height_dbh_covariance_m2": nan,
+            "height_dbh_correlation": nan,
+        }
+
+    moment_h = height_moment(U, p, order=1)
+    moment_d = dbh_moment(U, p, order=1, unit="m")
+    moment_h2 = height_moment(U, p, order=2)
+    moment_d2 = dbh_moment(U, p, order=2, unit="m")
+    moment_hd = height_dbh_cross_moment(U, p, dbh_unit="m")
+    mean_h = moment_h / total
+    mean_d = moment_d / total
+    variance_h = max(0.0, moment_h2 / total - mean_h**2)
+    variance_d = max(0.0, moment_d2 / total - mean_d**2)
+    covariance = moment_hd / total - mean_h * mean_d
+    denominator = np.sqrt(variance_h * variance_d)
+    correlation = float("nan") if denominator <= 0.0 else covariance / denominator
+
+    return {
+        "stand_density": total,
+        "height_moment": moment_h,
+        "dbh_moment_m": moment_d,
+        "height_second_moment": moment_h2,
+        "dbh_second_moment_m2": moment_d2,
+        "height_dbh_cross_moment_m2": moment_hd,
+        "mean_height": mean_h,
+        "mean_dbh_m": mean_d,
+        "height_variance_m2": variance_h,
+        "dbh_variance_m2": variance_d,
+        "height_dbh_covariance_m2": covariance,
+        "height_dbh_correlation": correlation,
+    }
+
+
 def mean_height(U: np.ndarray, p: Parameters) -> float:
     """Return arithmetic mean tree height in metres."""
-
-    density = _validated_density(U, p)
-    total = stand_density(density, p)
+    total = stand_density(U, p)
     if total <= 0.0:
         return float("nan")
-    height = physical_height_nodes(p)[:, None]
-    return float(np.sum(product_trapezoidal_weights(p) * height * density) / total)
-
-
+    return height_moment(U, p, order=1) / total
 def quadratic_mean_dbh(U: np.ndarray, p: Parameters, unit: str = "m") -> float:
     """Return quadratic mean DBH in metres or centimetres."""
-
-    density = _validated_density(U, p)
-    total = stand_density(density, p)
+    total = stand_density(U, p)
     if total <= 0.0:
         return float("nan")
-    dbh_m = physical_dbh_nodes(p, unit="m")[None, :]
-    value_m = float(
-        np.sqrt(np.sum(product_trapezoidal_weights(p) * dbh_m**2 * density) / total)
-    )
-    if unit == "m":
-        return value_m
-    if unit == "cm":
-        return 100.0 * value_m
-    raise ValueError("DBH unit must be 'm' or 'cm'.")
-
-
+    return float(np.sqrt(dbh_moment(U, p, order=2, unit=unit) / total))
 def basal_area_consistent(U: np.ndarray, p: Parameters) -> float:
     """Return basal area in square metres per hectare."""
-
-    density = _validated_density(U, p)
-    dbh_m = physical_dbh_nodes(p, unit="m")[None, :]
-    second_moment = float(
-        np.sum(product_trapezoidal_weights(p) * dbh_m**2 * density)
-    )
-    return 0.25 * np.pi * second_moment
-
-
+    return 0.25 * np.pi * dbh_moment(U, p, order=2, unit="m")
 def height_marginal_density(
     U: np.ndarray,
     p: Parameters,
