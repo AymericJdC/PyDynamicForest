@@ -367,12 +367,23 @@ def compute_transport_legacy(
     return transport
 
 
+def _validate_implicit_component_factor(name: str, value: float) -> float:
+    """Return a finite non-negative diagnostic implicit-component factor."""
+    factor = float(value)
+    if not np.isfinite(factor) or factor < 0.0:
+        raise ValueError(f"{name} must be a finite non-negative number.")
+    return factor
+
+
 def assemble_dense_legacy_system(
     state: State,
     p: Parameters,
     derived,
     fields_next: dict[str, np.ndarray],
     transport: np.ndarray,
+    *,
+    diffusion_factor: float = 1.0,
+    mortality_factor: float = 1.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Assemble the dense linear system A U^{n+1} = b.
@@ -393,8 +404,14 @@ def assemble_dense_legacy_system(
     dy = grid.dy
     dt = time.dt
 
-    diffusion = fields_next["diffusion"]
-    mortality = fields_next["mortality"]
+    diffusion_factor = _validate_implicit_component_factor(
+        "diffusion_factor", diffusion_factor
+    )
+    mortality_factor = _validate_implicit_component_factor(
+        "mortality_factor", mortality_factor
+    )
+    diffusion = diffusion_factor * fields_next["diffusion"]
+    mortality = mortality_factor * fields_next["mortality"]
 
     n_unknowns = nx * ny
 
@@ -457,6 +474,9 @@ def assemble_sparse_legacy_system(
     derived,
     fields_next: dict[str, np.ndarray],
     transport: np.ndarray,
+    *,
+    diffusion_factor: float = 1.0,
+    mortality_factor: float = 1.0,
 ):
     """
     Assemble the sparse linear system A U^{n+1} = b.
@@ -477,8 +497,14 @@ def assemble_sparse_legacy_system(
     dy = grid.dy
     dt = time.dt
 
-    diffusion = fields_next["diffusion"]
-    mortality = fields_next["mortality"]
+    diffusion_factor = _validate_implicit_component_factor(
+        "diffusion_factor", diffusion_factor
+    )
+    mortality_factor = _validate_implicit_component_factor(
+        "mortality_factor", mortality_factor
+    )
+    diffusion = diffusion_factor * fields_next["diffusion"]
+    mortality = mortality_factor * fields_next["mortality"]
 
     n_unknowns = nx * ny
 
