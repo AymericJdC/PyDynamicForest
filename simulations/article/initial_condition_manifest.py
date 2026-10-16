@@ -27,10 +27,7 @@ from simulations.article.config import ARTICLE_CONFIG
 from simulations.article.context import build_context
 from simulations.article.initial_condition import build_initial_condition
 from simulations.article.parameters import build_parameters
-from simulations.article_submission_legacy.diagnose_initial_condition import (
-    INITIAL_OBSERVATIONS,
-    _observed_derived_diameter_moments,
-)
+from simulations.article.observations import observation_at_age
 
 SUMMARY_FIELDS = [
     "observable", "simulated_value", "observed_or_derived_value", "residual",
@@ -58,7 +55,7 @@ def build_manifest() -> tuple[dict, list[dict], list[dict]]:
     state = build_initial_state(initial, p, c)
     summary = joint_moment_summary(state.U, p)
     dominant = continuous_dominant_height_details(state.U, p)
-    diameter_observed = _observed_derived_diameter_moments()
+    initial_observed = observation_at_age(18.0)
 
     simulated = {
         "N": stand_density(state.U, p),
@@ -74,14 +71,14 @@ def build_manifest() -> tuple[dict, list[dict], list[dict]]:
         "dominant_selected_stems": dominant["selected_stems"],
     }
     observed = {
-        "N": INITIAL_OBSERVATIONS["N"],
-        "G": INITIAL_OBSERVATIONS["G"],
-        "Dm": INITIAL_OBSERVATIONS["Dm_cm"],
-        "Dg": diameter_observed["Dg_cm"],
-        "sigma_D": diameter_observed["standard_deviation_cm"],
-        "Hm": INITIAL_OBSERVATIONS["Hm"],
+        "N": initial_observed["N"],
+        "G": initial_observed["G"],
+        "Dm": initial_observed["Dm"],
+        "Dg": initial_observed["Dg"],
+        "sigma_D": initial_observed["sigma_D"],
+        "Hm": initial_observed["Hm"],
         "sigma_H": ARTICLE_CONFIG["initial_condition"]["sigma_h_physical"],
-        "H0_continuous": INITIAL_OBSERVATIONS["H0"],
+        "H0_continuous": initial_observed["H0"],
     }
     units = {
         "N": "trees/ha", "G": "m2/ha", "Dm": "cm", "Dg": "cm",
