@@ -42,8 +42,8 @@ OBSERVATIONS = {
     69.0: {"N": 682.5657895, "G": 89.55632942, "Dm": 39.44741553, "Hm": 38.96861330, "H0": 43.14040062},
 }
 
-UNITS = {"N": "trees/ha", "G": "m2/ha", "Dm": "cm", "Dg": "cm", "sigma_D": "cm", "Hm": "m", "H0": "m"}
-STATUS = {"N": "observed", "G": "observed", "Dm": "observed", "Dg": "derived_from_N_and_G", "sigma_D": "derived_from_Dm_and_Dg", "Hm": "observed_or_missing", "H0": "observed_or_missing_definition_pending"}
+UNITS = {"N": "trees/ha", "G": "m2/ha", "Dm": "cm", "Dg": "cm", "sigma_D": "cm", "Hm": "m", "H0": "m", "H0_minus_Hm": "m"}
+STATUS = {"N": "observed", "G": "observed", "Dm": "observed", "Dg": "derived_from_N_and_G", "sigma_D": "derived_from_Dm_and_Dg", "Hm": "observed_or_missing", "H0": "observed_or_missing_definition_pending", "H0_minus_Hm": "derived_from_observed_H0_and_Hm"}
 
 
 def observation_ages() -> tuple[float, ...]:
@@ -71,6 +71,10 @@ def observation_at_age(age: float, include_derived: bool = True) -> dict:
     if include_derived:
         row["Dg"] = quadratic_mean_dbh_cm(row["N"], row["G"])
         row["sigma_D"] = dbh_standard_deviation_cm(row["Dm"], row["Dg"])
+        row["H0_minus_Hm"] = (
+            None if row["H0"] is None or row["Hm"] is None
+            else row["H0"] - row["Hm"]
+        )
     return row
 
 

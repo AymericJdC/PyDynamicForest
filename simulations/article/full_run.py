@@ -137,7 +137,7 @@ def _comparison_rows(requested_age: float, state, p) -> list[dict]:
             "relative_residual": "" if relative is None else relative,
             "unit": UNITS.get(name, {
                 "sigma_H": "m", "rho_HD": "dimensionless",
-                "H0_minus_Hm": "m", "dominant_threshold_dbh": "cm",
+                "dominant_threshold_dbh": "cm",
                 "dominant_selected_stems": "trees/ha",
             }.get(name, "")),
             "observation_status": (
