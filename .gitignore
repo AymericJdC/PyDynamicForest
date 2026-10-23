@@ -80,3 +80,11 @@ outputs/
 # Q-9F.6 generated height-growth allocation audit
 /outputs/article_scenarios/ecouves_a5_height_growth_allocation_audit/*
 !/outputs/article_scenarios/ecouves_a5_height_growth_allocation_audit/.gitkeep
+
+# Q-9F.7 generated status-shape sensitivity outputs
+/outputs/article_scenarios/ecouves_a5_status_shape_sensitivity/*
+!/outputs/article_scenarios/ecouves_a5_status_shape_sensitivity/.gitkeep
+
+# Q-9F.7 generated status-shape mass-balance diagnostics
+/outputs/article_scenarios/ecouves_a5_status_shape_mass_balance/*
+!/outputs/article_scenarios/ecouves_a5_status_shape_mass_balance/.gitkeep

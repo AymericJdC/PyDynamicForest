@@ -41,3 +41,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9F.6
 
 `height_growth_allocation_audit.py` separates the global height-growth field from the implemented joint-cumulative status allocation without simulating an alternative law.
+
+## Q-9F.7
+
+`status_shape_sensitivity.py` applies `S^gamma` only to height transport, with gamma 1 as an exact solver non-regression control and no calibration.
