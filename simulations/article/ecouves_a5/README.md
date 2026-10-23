@@ -13,3 +13,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9E.4
 
 `grid_projection.py` implements compact conservative bilinear regularisation onto tensor-grid nodes. Mass and first moments are conserved under trapezoidal quadrature; non-conserved diagnostics remain explicit.
+
+## Q-9E.5
+
+`pydynamicforest_adapter.py` converts conservative Q-9E.4 nodal masses to the native normalized `(height, DBH)` solver state. `state_compatibility.py` checks mass, moments, units, axes and observation operators without advancing the model.
