@@ -64,3 +64,7 @@ outputs/
 # Q-9F.2 generated main trajectory outputs
 /outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/*
 !/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/.gitkeep
+
+# Q-9F.3 generated distributional diagnostics
+/outputs/article_scenarios/ecouves_a5_distributional_diagnostics/*
+!/outputs/article_scenarios/ecouves_a5_distributional_diagnostics/.gitkeep

@@ -25,3 +25,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9F.2
 
 `main_dynamic_trajectory.py` advances the reconstructed 1992 native state to 2020 with unchanged dynamics and compares it with independently reconstructed 1998, 2016 and 2020 states.
+
+## Q-9F.3
+
+`distributional_diagnostics.py` compares simulated and reconstructed DBH/height marginals, quantiles, joint dependence and slenderness without calibration.

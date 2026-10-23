@@ -17,3 +17,5 @@ from .state_compatibility import StateCompatibility, diagnose_native_compatibili
 from .short_dynamic_control import ShortControlRow, load_native_initial_condition, run_short_dynamic_control, summarize
 
 from .main_dynamic_trajectory import StandSummary, load_empirical_targets, nearest_target_steps, run_main_trajectory, summarize_density
+
+from .distributional_diagnostics import DistributionComparison, JointComparison, diagnose_year, run_distributional_diagnostics
