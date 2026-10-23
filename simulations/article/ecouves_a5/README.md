@@ -29,3 +29,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9F.3
 
 `distributional_diagnostics.py` compares simulated and reconstructed DBH/height marginals, quantiles, joint dependence and slenderness without calibration.
+
+## Q-9F.4
+
+`mechanistic_sensitivity.py` performs a centred OAT screening of growth, diffusion and mortality mechanisms from the fixed reconstructed 1992 state, without calibration.

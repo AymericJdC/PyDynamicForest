@@ -68,3 +68,7 @@ outputs/
 # Q-9F.3 generated distributional diagnostics
 /outputs/article_scenarios/ecouves_a5_distributional_diagnostics/*
 !/outputs/article_scenarios/ecouves_a5_distributional_diagnostics/.gitkeep
+
+# Q-9F.4 generated mechanistic sensitivity outputs
+/outputs/article_scenarios/ecouves_a5_mechanistic_sensitivity/*
+!/outputs/article_scenarios/ecouves_a5_mechanistic_sensitivity/.gitkeep
