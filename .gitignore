@@ -76,3 +76,7 @@ outputs/
 # Q-9F.5 generated height-hierarchy diagnostics
 /outputs/article_scenarios/ecouves_a5_height_hierarchy/*
 !/outputs/article_scenarios/ecouves_a5_height_hierarchy/.gitkeep
+
+# Q-9F.6 generated height-growth allocation audit
+/outputs/article_scenarios/ecouves_a5_height_growth_allocation_audit/*
+!/outputs/article_scenarios/ecouves_a5_height_growth_allocation_audit/.gitkeep

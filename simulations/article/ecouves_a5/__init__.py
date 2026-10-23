@@ -23,3 +23,5 @@ from .distributional_diagnostics import DistributionComparison, JointComparison,
 from .mechanistic_sensitivity import SensitivityCase, case_parameters, centred_elasticities, make_case, run_case, selected_cases
 
 from .hierarchical_height_diagnostics import (HierarchyBin, HierarchyComparison, compare_profiles, hierarchy_profile, run_hierarchical_diagnostics)
+
+from .height_growth_allocation_audit import AllocationClass, audit_state, run_allocation_audit

@@ -37,3 +37,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9F.5
 
 `hierarchical_height_diagnostics.py` localises vertical discrepancies across state-specific relative-DBH hierarchy classes without calibration.
+
+## Q-9F.6
+
+`height_growth_allocation_audit.py` separates the global height-growth field from the implemented joint-cumulative status allocation without simulating an alternative law.
