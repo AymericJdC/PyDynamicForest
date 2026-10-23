@@ -56,3 +56,7 @@ outputs/
 # Q-9E.5 generated native-state compatibility outputs
 /outputs/article_scenarios/ecouves_a5_solver_compatibility/*
 !/outputs/article_scenarios/ecouves_a5_solver_compatibility/.gitkeep
+
+# Q-9F.1 generated short dynamic control outputs
+/outputs/article_scenarios/ecouves_a5_short_dynamic_control/*
+!/outputs/article_scenarios/ecouves_a5_short_dynamic_control/.gitkeep

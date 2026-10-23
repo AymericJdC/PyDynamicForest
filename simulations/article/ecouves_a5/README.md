@@ -17,3 +17,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9E.5
 
 `pydynamicforest_adapter.py` converts conservative Q-9E.4 nodal masses to the native normalized `(height, DBH)` solver state. `state_compatibility.py` checks mass, moments, units, axes and observation operators without advancing the model.
+
+## Q-9F.1
+
+`short_dynamic_control.py` performs a few sparse legacy steps from the reconstructed 1992 native state and reports numerical stability without calibration.
