@@ -7,3 +7,6 @@ from .height_adapter import build_height_provider_inputs
 
 from .savine_height_provider import (DomainPolicy, SavineDouglasHeightProvider, SavineDouglasParameters, SavineStandMetrics, compute_savine_stand_metrics, predict_savine_douglas_height_m)
 from .height_reconstruction import AnnualHeightReconstruction, reconstruct_year
+
+from .grid_projection import (BoundaryPolicy, ProjectedState, ProjectionDiagnostics, ProjectionGrid, project_trees_to_grid, projection_diagnostics, trapezoidal_weights)
+from .grid_reconstruction import AnnualGridReconstruction, reconstruct_grid_state

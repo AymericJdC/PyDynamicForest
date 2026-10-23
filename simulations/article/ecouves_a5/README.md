@@ -9,3 +9,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9E.3
 
 `savine_height_provider.py` implements the provisional even-aged Douglas fixed-effect relation from supplementary Table S5. `height_reconstruction.py` orchestrates validation and diagnostics without calibration or randomization.
+
+## Q-9E.4
+
+`grid_projection.py` implements compact conservative bilinear regularisation onto tensor-grid nodes. Mass and first moments are conserved under trapezoidal quadrature; non-conserved diagnostics remain explicit.
