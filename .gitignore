@@ -35,3 +35,13 @@ Thumbs.db
 # Project outputs
 outputs/
 /.luarc.json
+
+# Q-9E - Ecouves A5 local data and generated outputs
+/data/article/ecouves_a5/raw/*
+!/data/article/ecouves_a5/raw/.gitkeep
+/data/article/ecouves_a5/reference/*
+!/data/article/ecouves_a5/reference/.gitkeep
+/data/article/ecouves_a5/processed/*
+!/data/article/ecouves_a5/processed/.gitkeep
+/outputs/article_scenarios/ecouves_a5_reconstruction/*
+!/outputs/article_scenarios/ecouves_a5_reconstruction/.gitkeep
