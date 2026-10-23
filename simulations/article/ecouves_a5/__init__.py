@@ -15,3 +15,5 @@ from .pydynamicforest_adapter import (NativeStateConversion, Q9E4GridState, buil
 from .state_compatibility import StateCompatibility, diagnose_native_compatibility
 
 from .short_dynamic_control import ShortControlRow, load_native_initial_condition, run_short_dynamic_control, summarize
+
+from .main_dynamic_trajectory import StandSummary, load_empirical_targets, nearest_target_steps, run_main_trajectory, summarize_density

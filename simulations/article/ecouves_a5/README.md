@@ -21,3 +21,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9F.1
 
 `short_dynamic_control.py` performs a few sparse legacy steps from the reconstructed 1992 native state and reports numerical stability without calibration.
+
+## Q-9F.2
+
+`main_dynamic_trajectory.py` advances the reconstructed 1992 native state to 2020 with unchanged dynamics and compares it with independently reconstructed 1998, 2016 and 2020 states.
