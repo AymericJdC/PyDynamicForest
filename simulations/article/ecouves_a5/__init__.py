@@ -21,3 +21,5 @@ from .main_dynamic_trajectory import StandSummary, load_empirical_targets, neare
 from .distributional_diagnostics import DistributionComparison, JointComparison, diagnose_year, run_distributional_diagnostics
 
 from .mechanistic_sensitivity import SensitivityCase, case_parameters, centred_elasticities, make_case, run_case, selected_cases
+
+from .hierarchical_height_diagnostics import (HierarchyBin, HierarchyComparison, compare_profiles, hierarchy_profile, run_hierarchical_diagnostics)

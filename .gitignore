@@ -72,3 +72,7 @@ outputs/
 # Q-9F.4 generated mechanistic sensitivity outputs
 /outputs/article_scenarios/ecouves_a5_mechanistic_sensitivity/*
 !/outputs/article_scenarios/ecouves_a5_mechanistic_sensitivity/.gitkeep
+
+# Q-9F.5 generated height-hierarchy diagnostics
+/outputs/article_scenarios/ecouves_a5_height_hierarchy/*
+!/outputs/article_scenarios/ecouves_a5_height_hierarchy/.gitkeep

@@ -33,3 +33,7 @@ The height interface is split into typed domain objects, generic providers, non-
 ## Q-9F.4
 
 `mechanistic_sensitivity.py` performs a centred OAT screening of growth, diffusion and mortality mechanisms from the fixed reconstructed 1992 state, without calibration.
+
+## Q-9F.5
+
+`hierarchical_height_diagnostics.py` localises vertical discrepancies across state-specific relative-DBH hierarchy classes without calibration.
