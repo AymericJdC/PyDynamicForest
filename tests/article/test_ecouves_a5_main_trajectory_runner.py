@@ -73,3 +73,10 @@ def test_refuse_nonempty_output_allows_explicit_overwrite(tmp_path):
     runner.refuse_nonempty_output(output_dir, overwrite=True)
 
     assert existing.exists()
+
+
+def test_completed_full_horizon_accepts_numerical_end_age():
+    runner = load_runner()
+
+    assert runner.completed_full_horizon(72.99899999999326, 73.0, 0.0051)
+    assert not runner.completed_full_horizon(72.99, 73.0, 0.0051)
