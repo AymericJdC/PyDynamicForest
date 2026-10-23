@@ -1,0 +1,24 @@
+﻿field,q9d_reference_code,q9f2_code,q9f2_code_evidence,q9f2_output,q9f2_output_evidence,status,recommended_action
+git_commit,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+git_worktree_status,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+python_version,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+numpy_version,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+scipy_version,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+execution_timestamp,False,False,,False,,not detected,add if required for reproducibility
+execution_duration,True,True,scripts/article/run_ecouves_a5_main_trajectory.py,True,C:/Users/saintemarie/Documents/GitHub/PyDynamicForest/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/ecouves_a5_main_trajectory_metadata.json,present in Q-9F.2 outputs,retain and standardize naming if needed
+initial_state_path,True,True,scripts/article/run_ecouves_a5_main_trajectory.py | simulations/article/ecouves_a5/main_dynamic_trajectory.py,False,,present in Q-9F.2 code but not detected in outputs,ensure emitted in final Q-9F.2 manifest
+initial_state_sha256,False,False,,False,,not detected,add if required for reproducibility
+inventory_source,False,False,,False,,not detected,add explicit scientific provenance to Q-9F.2 manifest
+aggregate_source,False,False,,False,,not detected,add explicit scientific provenance to Q-9F.2 manifest
+height_relation_source,False,True,scripts/article/run_ecouves_a5_main_trajectory.py | simulations/article/ecouves_a5/main_dynamic_trajectory.py,True,C:/Users/saintemarie/Documents/GitHub/PyDynamicForest/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/ecouves_a5_main_trajectory_metadata.json,present in Q-9F.2 outputs,retain and standardize naming if needed
+age_convention,False,True,simulations/article/ecouves_a5/main_dynamic_trajectory.py,False,,present in Q-9F.2 code but not detected in outputs,ensure emitted in final Q-9F.2 manifest
+dt,True,True,scripts/article/run_ecouves_a5_main_trajectory.py | simulations/article/ecouves_a5/main_dynamic_trajectory.py,True,C:/Users/saintemarie/Documents/GitHub/PyDynamicForest/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/ecouves_a5_main_trajectory_metadata.json,present in Q-9F.2 outputs,retain and standardize naming if needed
+initial_age,True,True,scripts/article/run_ecouves_a5_main_trajectory.py,True,C:/Users/saintemarie/Documents/GitHub/PyDynamicForest/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/ecouves_a5_main_trajectory_metadata.json,present in Q-9F.2 outputs,retain and standardize naming if needed
+target_age,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+reached_age,True,True,scripts/article/run_ecouves_a5_main_trajectory.py | simulations/article/ecouves_a5/main_dynamic_trajectory.py,True,C:/Users/saintemarie/Documents/GitHub/PyDynamicForest/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/ecouves_a5_main_trajectory_comparison.csv | C:/Users/saintemarie/Documents/GitHub/PyDynamicForest/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/ecouves_a5_main_trajectory_metadata.json,present in Q-9F.2 outputs,retain and standardize naming if needed
+dynamic_parameters,True,True,scripts/article/run_ecouves_a5_main_trajectory.py | simulations/article/ecouves_a5/main_dynamic_trajectory.py,True,C:/Users/saintemarie/Documents/GitHub/PyDynamicForest/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/ecouves_a5_main_trajectory_metadata.json,present in Q-9F.2 outputs,retain and standardize naming if needed
+no_recalibration,False,True,scripts/article/run_ecouves_a5_main_trajectory.py,False,,present in Q-9F.2 code but not detected in outputs,ensure emitted in final Q-9F.2 manifest
+output_overwrite_guard,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+configuration_manifest,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+reproducibility_manifest,True,False,,False,,Q-9D guarantee missing from Q-9F.2,transfer guarantee from Q-9D to Q-9F.2
+completion_flag,True,True,simulations/article/ecouves_a5/main_dynamic_trajectory.py,True,C:/Users/saintemarie/Documents/GitHub/PyDynamicForest/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/ecouves_a5_main_trajectory_time_series.csv,present in Q-9F.2 outputs,retain and standardize naming if needed
