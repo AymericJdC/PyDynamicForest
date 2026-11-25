@@ -1,0 +1,12 @@
+# Restricted empirical data
+*
+
+# Keep governance and documentation files
+!.gitignore
+!README.md
+
+# Allow documented schemas and synthetic examples only
+!schema/
+!schema/**
+!synthetic_example/
+!synthetic_example/**

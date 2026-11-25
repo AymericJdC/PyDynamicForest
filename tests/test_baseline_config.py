@@ -1,6 +1,23 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-from simulations.baseline.config import BASELINE_CONFIG
+from argparse import Namespace
+
+from scripts.run_baseline import ( 
+    apply_cli_overrides,
+    build_parser
+)
+
+from simulations.baseline.config import (
+    BASELINE_CONFIG,
+    copy_baseline_config,
+    available_baseline_presets,
+    build_baseline_config_from_preset,
+    make_baseline_config,
+    make_short_debug_config,
+    make_dense_debug_config,
+    make_state_debug_config,
+)
+
 from simulations.baseline.initial_condition import build_initial_condition
 from simulations.baseline.parameters import build_parameters
 from simulations.baseline.context import build_context
@@ -78,6 +95,9 @@ def test_baseline_parameters_use_config_values():
     assert p.numerics.positivity_tolerance == (
         cfg["solver"]["positivity_tolerance"]
     )
+    assert p.numerics.model_field_evaluation == (
+        cfg["solver"]["model_field_evaluation"]
+    )
 
 
 def test_baseline_context_uses_config_values():
@@ -129,3 +149,251 @@ def test_baseline_configured_simulation_runs_short():
     assert results.metadata["solver"] == "sparse_legacy"
     assert results.metadata["matrix_storage"] == "sparse"
     assert results.metadata["solver_requested"] is None
+
+def test_copy_baseline_config_returns_independent_copy():
+    config = copy_baseline_config()
+
+    config["grid"]["nx"] = 10
+    config["output"]["observation_ages"].append(999.0)
+
+    assert BASELINE_CONFIG["grid"]["nx"] == 20
+    assert BASELINE_CONFIG["output"]["observation_ages"] == [18.0, 45.0, 69.0]
+
+    assert config["grid"]["nx"] == 10
+    assert config["output"]["observation_ages"] == [18.0, 45.0, 69.0, 999.0]
+
+
+def test_baseline_builders_accept_custom_config():
+    config = copy_baseline_config()
+
+    config["name"] = "baseline_custom_test"
+    config["grid"]["nx"] = 10
+    config["grid"]["ny"] = 12
+    config["time"]["n_steps"] = 5
+    config["output"]["observation_ages"] = [18.0, 20.0]
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    assert x0.name == config["initial_condition"]["name"]
+    assert p.name == "baseline_custom_test"
+    assert p.numerics.grid.nx == 10
+    assert p.numerics.grid.ny == 12
+    assert p.numerics.time.n_steps == 5
+    assert c.name == "baseline_custom_test_context"
+    assert c.output.observation_ages == [18.0, 20.0]
+
+def test_custom_config_simulation_runs_short():
+    config = copy_baseline_config()
+
+    config["name"] = "baseline_custom_short_test"
+    config["grid"]["nx"] = 10
+    config["grid"]["ny"] = 10
+    config["time"]["n_steps"] = 5
+    config["time"]["t_end"] = 1.0
+    config["ages"]["final_age"] = 19.0
+    config["output"]["observation_ages"] = [18.0, 19.0]
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert results.metadata["solver"] == "sparse_legacy"
+    assert results.metadata["matrix_storage"] == "sparse"
+
+def test_run_baseline_apply_cli_overrides():
+    config = copy_baseline_config()
+
+    args = Namespace(
+        nx=11,
+        ny=13,
+        n_steps=17,
+        t_end=8.0,
+        initial_age=None,
+        final_age=None,
+        observation_ages=[18.0, 22.0, 26.0],
+        model_field_evaluation="state",
+    )
+
+    updated = apply_cli_overrides(config, args)
+
+    assert updated["grid"]["nx"] == 11
+    assert updated["grid"]["ny"] == 13
+    assert updated["time"]["n_steps"] == 17
+    assert updated["time"]["t_end"] == 8.0
+    assert updated["ages"]["initial_age"] == 18.0
+    assert updated["ages"]["final_age"] == 26.0
+    assert updated["output"]["observation_ages"] == [18.0, 22.0, 26.0]
+    assert updated["solver"]["model_field_evaluation"] == "state"
+
+def test_available_baseline_presets_contains_expected_values():
+    presets = available_baseline_presets()
+
+    assert presets == [
+        "baseline",
+        "dense-debug",
+        "short-debug",
+        "state-debug",
+    ]
+
+
+def test_make_baseline_config_matches_default_copy():
+    config = make_baseline_config()
+
+    assert config["name"] == BASELINE_CONFIG["name"]
+    assert config["grid"]["nx"] == BASELINE_CONFIG["grid"]["nx"]
+    assert config["solver"]["matrix_storage"] == "sparse"
+
+
+def test_make_short_debug_config():
+    config = make_short_debug_config()
+
+    assert config["name"] == "baseline_short_debug"
+    assert config["grid"]["nx"] == 10
+    assert config["grid"]["ny"] == 10
+    assert config["time"]["t_end"] == 2.0
+    assert config["time"]["n_steps"] == 20
+    assert config["ages"]["final_age"] == 20.0
+    assert config["solver"]["matrix_storage"] == "sparse"
+    assert config["output"]["observation_ages"] == [18.0, 19.0, 20.0]
+
+def test_make_state_debug_config():
+    config = make_state_debug_config()
+
+    assert config["name"] == "baseline_state_debug"
+    assert config["grid"]["nx"] == 10
+    assert config["grid"]["ny"] == 10
+    assert config["time"]["t_end"] == 2.0
+    assert config["time"]["n_steps"] == 20
+    assert config["ages"]["final_age"] == 20.0
+    assert config["solver"]["matrix_storage"] == "sparse"
+    assert config["solver"]["model_field_evaluation"] == "state"
+    assert config["output"]["observation_ages"] == [18.0, 19.0, 20.0]
+
+def test_make_dense_debug_config():
+    config = make_dense_debug_config()
+
+    assert config["name"] == "baseline_dense_debug"
+    assert config["grid"]["nx"] == 10
+    assert config["grid"]["ny"] == 10
+    assert config["time"]["n_steps"] == 20
+    assert config["solver"]["matrix_storage"] == "dense"
+    assert config["solver"]["linear_solver"] == "numpy.linalg.solve"
+
+
+def test_build_baseline_config_from_preset():
+    baseline = build_baseline_config_from_preset("baseline")
+    short_debug = build_baseline_config_from_preset("short-debug")
+    dense_debug = build_baseline_config_from_preset("dense-debug")
+    state_debug = build_baseline_config_from_preset("state-debug")
+
+    assert baseline["name"] == "baseline_reduced"
+    assert short_debug["name"] == "baseline_short_debug"
+    assert dense_debug["name"] == "baseline_dense_debug"
+    assert state_debug["name"] == "baseline_state_debug"
+    assert state_debug["solver"]["model_field_evaluation"] == "state"
+
+def test_build_baseline_config_from_unknown_preset_raises():
+    try:
+        build_baseline_config_from_preset("unknown")
+    except ValueError as exc:
+        assert "Unknown baseline preset" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError for unknown preset.")
+
+
+def test_short_debug_preset_simulation_runs():
+    config = build_baseline_config_from_preset("short-debug")
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert results.metadata["solver"] == "sparse_legacy"
+
+
+def test_dense_debug_preset_simulation_runs():
+    config = build_baseline_config_from_preset("dense-debug")
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert results.metadata["solver"] == "dense_legacy"
+
+def test_run_baseline_apply_cli_overrides_model_field_evaluation():
+    config = copy_baseline_config()
+
+    args = Namespace(
+        nx=None,
+        ny=None,
+        n_steps=None,
+        t_end=None,
+        initial_age=None,
+        final_age=None,
+        observation_ages=None,
+        model_field_evaluation="state",
+    )
+
+    updated = apply_cli_overrides(config, args)
+
+    assert updated["solver"]["model_field_evaluation"] == "state"
+
+def test_state_debug_preset_simulation_runs():
+    config = build_baseline_config_from_preset("state-debug")
+
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
+
+    results = simulate(
+        x0,
+        p,
+        c,
+        max_steps=2,
+    )
+
+    assert results.final_state.step_index == 2
+    assert p.numerics.model_field_evaluation == "state"
+
+def test_run_baseline_parser_accepts_progress_flag():
+    parser = build_parser()
+
+    args = parser.parse_args(
+        [
+            "--preset",
+            "short-debug",
+            "--progress",
+            "--max-steps",
+            "2",
+            "--output-dir",
+            "outputs/test_progress",
+        ]
+    )
+
+    assert args.progress is True

@@ -67,6 +67,8 @@ def test_end_to_end_baseline_cli_workflow(tmp_path):
 
     run_module(
         "scripts.run_baseline",
+        "--preset",
+        "short-debug",
         "--max-steps",
         "10",
         "--output-dir",

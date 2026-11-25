@@ -14,7 +14,14 @@ It remains separate from:
 
 import numpy as np
 
-from pydynamicforest.types import CoefficientLaw, Parameters
+from pydynamicforest.types import (
+    CoefficientLaw,
+    DerivedQuantities,
+    ModelFields,
+    Parameters,
+    SimulationContext,
+    State,
+)
 
 
 def evaluate_coefficient_on_grid(
@@ -135,3 +142,155 @@ def check_model_fields_shapes(
     """
 
     return all(values.shape == expected_shape for values in fields.values())
+
+def evaluate_state_coefficient_law(
+    law: CoefficientLaw,
+    t: float,
+    x: float,
+    y: float,
+    state: State | None = None,
+    derived: DerivedQuantities | None = None,
+    context: SimulationContext | None = None,
+) -> float:
+    """
+    Evaluate a coefficient law at one grid point.
+
+    The current legacy laws typically have the simple signature:
+
+        law.function(t, x, y)
+
+    This adapter also supports future laws with richer signatures such as:
+
+        law.function(
+            t,
+            x,
+            y,
+            state=state,
+            derived=derived,
+            context=context,
+            parameters=law.parameters,
+        )
+
+    If the richer call is not supported by the law function, the legacy
+    signature is used as a fallback.
+    """
+
+    try:
+        return float(
+            law.function(
+                t,
+                x,
+                y,
+                state=state,
+                derived=derived,
+                context=context,
+                parameters=law.parameters,
+            )
+        )
+    except TypeError:
+        return float(law.function(t, x, y))
+
+
+def evaluate_state_coefficient_field(
+    law: CoefficientLaw,
+    p: Parameters,
+    state: State,
+    derived: DerivedQuantities | None = None,
+    context: SimulationContext | None = None,
+) -> np.ndarray:
+    """
+    Evaluate a scalar coefficient law on the full numerical grid.
+
+    Returns an array with shape:
+
+        (nx, ny)
+    """
+
+    grid = p.numerics.grid
+
+    field = np.zeros((grid.nx, grid.ny), dtype=float)
+
+    for i, x in enumerate(grid.x):
+        for j, y in enumerate(grid.y):
+            field[i, j] = evaluate_state_coefficient_law(
+                law,
+                t=state.time,
+                x=x,
+                y=y,
+                state=state,
+                derived=derived,
+                context=context,
+            )
+
+    return field
+
+
+def evaluate_state_model_fields(
+    p: Parameters,
+    state: State,
+    derived: DerivedQuantities | None = None,
+    context: SimulationContext | None = None,
+) -> ModelFields:
+    """
+    Evaluate all model coefficient fields on the numerical grid.
+
+    This function is state-aware and context-aware. It prepares future model
+    extensions where diffusion, mortality or growth laws may depend explicitly
+    on:
+
+        - the current state U;
+        - derived quantities;
+        - the simulation context.
+
+    The current baseline laws do not yet depend on state, derived quantities
+    or context, so this function should reproduce the same numerical fields
+    as the legacy time-based evaluation.
+    """
+
+    diffusion = evaluate_state_coefficient_field(
+        p.model.diffusion_law,
+        p,
+        state,
+        derived=derived,
+        context=context,
+    )
+
+    mortality = evaluate_state_coefficient_field(
+        p.model.mortality_law,
+        p,
+        state,
+        derived=derived,
+        context=context,
+    )
+
+    height_growth = evaluate_state_coefficient_field(
+        p.model.height_growth_law,
+        p,
+        state,
+        derived=derived,
+        context=context,
+    )
+
+    dbh_growth = evaluate_state_coefficient_field(
+        p.model.dbh_growth_law,
+        p,
+        state,
+        derived=derived,
+        context=context,
+    )
+
+    status = None
+    if derived is not None:
+        status = derived.status_field
+
+    return ModelFields(
+        diffusion=diffusion,
+        mortality=mortality,
+        height_growth=height_growth,
+        dbh_growth=dbh_growth,
+        status=status,
+        description=(
+            "Model fields evaluated from coefficient laws through the "
+            "state-aware interface."
+        ),
+    )

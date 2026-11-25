@@ -26,7 +26,10 @@ from scipy.sparse.linalg import spsolve
 
 from pydynamicforest.initial_conditions import build_initial_state
 from pydynamicforest.diagnostics import state_diagnostics
-from pydynamicforest.model import evaluate_model_fields
+from pydynamicforest.model import (
+    evaluate_model_fields,
+    evaluate_state_model_fields,
+)
 from pydynamicforest.numerics import (
     compute_derived_quantities,
     flatten_index,
@@ -39,6 +42,95 @@ from pydynamicforest.types import (
     State,
     TimeSeries,
 )
+
+
+def compute_transport_components_legacy(
+    state: State,
+    p: Parameters,
+    derived,
+    fields: dict[str, np.ndarray],
+) -> dict[str, np.ndarray]:
+    """Return the separate legacy height and DBH transport divergences.
+
+    This diagnostic operator reproduces the same face velocities, status-
+    weighted upwind states, boundary omissions, and axis orientation as
+    :func:`compute_transport_legacy`. It does not replace the validated solver
+    pathway. The existing total transport remains computed by the original
+    legacy function, while this function exposes the two directional terms:
+
+        total = height + dbh
+
+    The returned arrays have the same shape and sign convention as the total
+    term used on the right-hand side ``U - dt * transport``.
+    """
+    U = state.U
+    J = derived.cumulative_distribution
+    S = derived.status_field
+    Ch = get_model_field(fields, "height_growth")
+    Cd = get_model_field(fields, "dbh_growth")
+    grid = p.numerics.grid
+    nx = grid.nx
+    ny = grid.ny
+    dx = grid.dx
+    dy = grid.dy
+    den = max(derived.total_mass, p.numerics.epsilon_zero_mass)
+
+    height_transport = np.zeros_like(U)
+    dbh_transport = np.zeros_like(U)
+
+    for i in range(nx):
+        for j in range(ny):
+            Sij = S[i, j]
+
+            height_flux_plus = 0.0
+            height_flux_minus = 0.0
+            dbh_flux_plus = 0.0
+            dbh_flux_minus = 0.0
+
+            if i < nx - 1:
+                height_face_velocity_plus = 0.5 * (Ch[i + 1, j] + Ch[i, j])
+                if height_face_velocity_plus >= 0.0:
+                    height_upwind_plus = Sij * U[i, j]
+                else:
+                    height_upwind_plus = (J[i + 1, j] / den) * U[i + 1, j]
+                height_flux_plus = height_face_velocity_plus * height_upwind_plus
+
+            if i > 0:
+                height_face_velocity_minus = 0.5 * (Ch[i, j] + Ch[i - 1, j])
+                if height_face_velocity_minus >= 0.0:
+                    height_upwind_minus = (J[i - 1, j] / den) * U[i - 1, j]
+                else:
+                    height_upwind_minus = Sij * U[i, j]
+                height_flux_minus = height_face_velocity_minus * height_upwind_minus
+
+            if j < ny - 1:
+                dbh_face_velocity_plus = 0.5 * (Cd[i, j + 1] + Cd[i, j])
+                if dbh_face_velocity_plus >= 0.0:
+                    dbh_upwind_plus = Sij * U[i, j]
+                else:
+                    dbh_upwind_plus = (J[i, j + 1] / den) * U[i, j + 1]
+                dbh_flux_plus = dbh_face_velocity_plus * dbh_upwind_plus
+
+            if j > 0:
+                dbh_face_velocity_minus = 0.5 * (Cd[i, j] + Cd[i, j - 1])
+                if dbh_face_velocity_minus >= 0.0:
+                    dbh_upwind_minus = (J[i, j - 1] / den) * U[i, j - 1]
+                else:
+                    dbh_upwind_minus = Sij * U[i, j]
+                dbh_flux_minus = dbh_face_velocity_minus * dbh_upwind_minus
+
+            height_transport[i, j] = (
+                height_flux_plus - height_flux_minus
+            ) / dx
+            dbh_transport[i, j] = (
+                dbh_flux_plus - dbh_flux_minus
+            ) / dy
+
+    return {
+        "height": height_transport,
+        "dbh": dbh_transport,
+        "total": height_transport + dbh_transport,
+    }
 
 
 def compute_transport_legacy(
@@ -59,8 +151,8 @@ def compute_transport_legacy(
     J = derived.cumulative_distribution
     S = derived.status_field
 
-    Ch = fields["height_growth"]
-    Cd = fields["dbh_growth"]
+    Ch = get_model_field(fields, "height_growth")
+    Cd = get_model_field(fields, "dbh_growth")
 
     grid = p.numerics.grid
     nx = grid.nx
@@ -275,12 +367,23 @@ def compute_transport_legacy(
     return transport
 
 
+def _validate_implicit_component_factor(name: str, value: float) -> float:
+    """Return a finite non-negative diagnostic implicit-component factor."""
+    factor = float(value)
+    if not np.isfinite(factor) or factor < 0.0:
+        raise ValueError(f"{name} must be a finite non-negative number.")
+    return factor
+
+
 def assemble_dense_legacy_system(
     state: State,
     p: Parameters,
     derived,
     fields_next: dict[str, np.ndarray],
     transport: np.ndarray,
+    *,
+    diffusion_factor: float = 1.0,
+    mortality_factor: float = 1.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Assemble the dense linear system A U^{n+1} = b.
@@ -301,8 +404,14 @@ def assemble_dense_legacy_system(
     dy = grid.dy
     dt = time.dt
 
-    diffusion = fields_next["diffusion"]
-    mortality = fields_next["mortality"]
+    diffusion_factor = _validate_implicit_component_factor(
+        "diffusion_factor", diffusion_factor
+    )
+    mortality_factor = _validate_implicit_component_factor(
+        "mortality_factor", mortality_factor
+    )
+    diffusion = diffusion_factor * fields_next["diffusion"]
+    mortality = mortality_factor * fields_next["mortality"]
 
     n_unknowns = nx * ny
 
@@ -365,6 +474,9 @@ def assemble_sparse_legacy_system(
     derived,
     fields_next: dict[str, np.ndarray],
     transport: np.ndarray,
+    *,
+    diffusion_factor: float = 1.0,
+    mortality_factor: float = 1.0,
 ):
     """
     Assemble the sparse linear system A U^{n+1} = b.
@@ -385,8 +497,14 @@ def assemble_sparse_legacy_system(
     dy = grid.dy
     dt = time.dt
 
-    diffusion = fields_next["diffusion"]
-    mortality = fields_next["mortality"]
+    diffusion_factor = _validate_implicit_component_factor(
+        "diffusion_factor", diffusion_factor
+    )
+    mortality_factor = _validate_implicit_component_factor(
+        "mortality_factor", mortality_factor
+    )
+    diffusion = diffusion_factor * fields_next["diffusion"]
+    mortality = mortality_factor * fields_next["mortality"]
 
     n_unknowns = nx * ny
 
@@ -442,6 +560,93 @@ def assemble_sparse_legacy_system(
 
     return A.tocsr(), b
 
+def get_model_field(fields, name: str):
+    """
+    Return one model coefficient field from either the legacy dictionary
+    format or the state-aware ModelFields format.
+
+    This adapter allows the solver internals to be migrated progressively
+    from dictionary-based access:
+
+        fields["diffusion"]
+
+    toward attribute-based access:
+
+        fields.diffusion
+
+    without changing the numerical behavior.
+    """
+
+    if isinstance(fields, dict):
+        if name not in fields:
+            raise KeyError(f"Unknown model field: {name}")
+        return fields[name]
+
+    if hasattr(fields, name):
+        return getattr(fields, name)
+
+    raise KeyError(f"Unknown model field: {name}")
+
+def model_fields_to_legacy_dict(fields):
+    """
+    Convert model fields to the legacy dictionary format expected by
+    the current dense and sparse legacy-like solvers.
+    """
+
+    if isinstance(fields, dict):
+        return fields
+
+    return {
+        "diffusion": get_model_field(fields, "diffusion"),
+        "mortality": get_model_field(fields, "mortality"),
+        "height_growth": get_model_field(fields, "height_growth"),
+        "dbh_growth": get_model_field(fields, "dbh_growth"),
+        "status": get_model_field(fields, "status"),
+    }
+
+def evaluate_model_fields_for_solver(
+    state: State,
+    p: Parameters,
+    context: SimulationContext | None = None,
+):
+    """
+    Evaluate model fields for the time-step solver.
+
+    This function centralizes the choice between:
+
+    - the legacy time-based model-field evaluation;
+    - the new state-aware model-field evaluation.
+
+    The default mode is controlled by:
+
+        p.numerics.model_field_evaluation
+
+    Supported values are currently:
+
+    - "legacy": use evaluate_model_fields(p, state.time);
+    - "state": use evaluate_state_model_fields(p, state, derived=None, context=context).
+
+    The default baseline configuration uses "legacy", so the validated
+    numerical behavior is preserved.
+    """
+
+    mode = getattr(p.numerics, "model_field_evaluation", "legacy")
+
+    if mode == "legacy":
+        return evaluate_model_fields(p, state.time)
+
+    if mode == "state":
+        return evaluate_state_model_fields(
+            p,
+            state,
+            derived=None,
+            context=context,
+        )
+
+    raise ValueError(
+        f"Unknown model_field_evaluation mode: {mode}. "
+        "Expected 'legacy' or 'state'."
+    )
 
 def advance_one_step_dense_legacy(
     state: State,
@@ -461,7 +666,10 @@ def advance_one_step_dense_legacy(
 
     derived = compute_derived_quantities(state, p)
 
-    fields_current = evaluate_model_fields(p, t_current)
+    fields_current = evaluate_model_fields_for_solver(
+        state,
+        p,
+    )
     fields_next = evaluate_model_fields(p, t_next)
 
     transport = compute_transport_legacy(
@@ -514,7 +722,10 @@ def advance_one_step_sparse_legacy(
 
     derived = compute_derived_quantities(state, p)
 
-    fields_current = evaluate_model_fields(p, t_current)
+    fields_current = evaluate_model_fields_for_solver(
+        state,
+        p,
+    )
     fields_next = evaluate_model_fields(p, t_next)
 
     transport = compute_transport_legacy(
@@ -546,6 +757,30 @@ def advance_one_step_sparse_legacy(
         step_index=state.step_index + 1,
     )
 
+def make_progress_iterator(
+    iterable,
+    progress: bool = False,
+    total: int | None = None,
+    desc: str = "Simulating",
+):
+    """
+    Return an iterator, optionally wrapped in a tqdm progress bar.
+
+    The progress bar is disabled by default to preserve silent behavior
+    in tests, scripts and non-interactive workflows.
+    """
+
+    if not progress:
+        return iterable
+
+    from tqdm import tqdm
+
+    return tqdm(
+        iterable,
+        total=total,
+        desc=desc,
+        unit="step",
+    )
 
 def should_save_observation(
     state: State,
@@ -583,8 +818,14 @@ def select_one_step_solver(
     p.numerics.matrix_storage.
 
     Supported values:
-        - "dense"
-        - "sparse"
+        - "dense": legacy loops, dense direct solve (regression reference);
+        - "sparse": legacy loops, sparse direct solve;
+        - "vectorised": vectorised operators, sparse direct solve;
+        - "vectorised_cg": vectorised operators, Jacobi-preconditioned
+          conjugate gradient.
+
+    The vectorised solvers reproduce the legacy scheme; see
+    :mod:`pydynamicforest.fast_solver`.
     """
 
     if solver_name is not None:
@@ -598,9 +839,19 @@ def select_one_step_solver(
     if selected_solver == "sparse":
         return advance_one_step_sparse_legacy, "sparse_legacy"
 
+    if selected_solver == "vectorised":
+        from pydynamicforest.fast_solver import advance_one_step_vectorised_direct
+
+        return advance_one_step_vectorised_direct, "vectorised_direct"
+
+    if selected_solver == "vectorised_cg":
+        from pydynamicforest.fast_solver import advance_one_step_vectorised_cg
+
+        return advance_one_step_vectorised_cg, "vectorised_cg"
+
     raise ValueError(
         f"Unknown solver selection: {selected_solver}. "
-        "Expected 'dense' or 'sparse'."
+        "Expected 'dense', 'sparse', 'vectorised' or 'vectorised_cg'."
     )
 
 def simulate(
@@ -609,6 +860,7 @@ def simulate(
     c: SimulationContext,
     max_steps: int | None = None,
     solver_name: str | None = None,
+    progress: bool = False,
 ) -> SimulationResults:
     """
     Run a simulation from an InitialCondition, Parameters and SimulationContext.
@@ -632,6 +884,8 @@ def simulate(
             Optional solver override:
                 - "dense"
                 - "sparse"
+                - "vectorised"
+                - "vectorised_cg"
 
             If None, the solver is selected from p.numerics.matrix_storage.
 
@@ -684,7 +938,14 @@ def simulate(
 
     record_state(state)
 
-    for _ in range(n_steps):
+    step_iterator = make_progress_iterator(
+        range(n_steps),
+        progress=progress,
+        total=n_steps,
+        desc="Simulating",
+    )
+
+    for _ in step_iterator:
         state = advance_one_step(state, p)
         record_state(state)
 

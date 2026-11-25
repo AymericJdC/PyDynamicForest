@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-.pytest_cache/
 
 # Python build / packaging
 build/
@@ -35,3 +34,57 @@ Thumbs.db
 
 # Project outputs
 outputs/
+/.luarc.json
+
+# Q-9E - Ecouves A5 local data and generated outputs
+/data/article/ecouves_a5/raw/*
+!/data/article/ecouves_a5/raw/.gitkeep
+/data/article/ecouves_a5/reference/*
+!/data/article/ecouves_a5/reference/.gitkeep
+/data/article/ecouves_a5/processed/*
+!/data/article/ecouves_a5/processed/.gitkeep
+/outputs/article_scenarios/ecouves_a5_reconstruction/*
+!/outputs/article_scenarios/ecouves_a5_reconstruction/.gitkeep
+# Q-9E.3 generated height reconstructions
+/outputs/article_scenarios/ecouves_a5_height_reconstruction/*
+!/outputs/article_scenarios/ecouves_a5_height_reconstruction/.gitkeep
+
+# Q-9E.4 generated grid reconstructions
+/outputs/article_scenarios/ecouves_a5_grid_reconstruction/*
+!/outputs/article_scenarios/ecouves_a5_grid_reconstruction/.gitkeep
+
+# Q-9E.5 generated native-state compatibility outputs
+/outputs/article_scenarios/ecouves_a5_solver_compatibility/*
+!/outputs/article_scenarios/ecouves_a5_solver_compatibility/.gitkeep
+
+# Q-9F.1 generated short dynamic control outputs
+/outputs/article_scenarios/ecouves_a5_short_dynamic_control/*
+!/outputs/article_scenarios/ecouves_a5_short_dynamic_control/.gitkeep
+
+# Q-9F.2 generated main trajectory outputs
+/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/*
+!/outputs/article_scenarios/ecouves_a5_main_trajectory_1992_2020/.gitkeep
+
+# Q-9F.3 generated distributional diagnostics
+/outputs/article_scenarios/ecouves_a5_distributional_diagnostics/*
+!/outputs/article_scenarios/ecouves_a5_distributional_diagnostics/.gitkeep
+
+# Q-9F.4 generated mechanistic sensitivity outputs
+/outputs/article_scenarios/ecouves_a5_mechanistic_sensitivity/*
+!/outputs/article_scenarios/ecouves_a5_mechanistic_sensitivity/.gitkeep
+
+# Q-9F.5 generated height-hierarchy diagnostics
+/outputs/article_scenarios/ecouves_a5_height_hierarchy/*
+!/outputs/article_scenarios/ecouves_a5_height_hierarchy/.gitkeep
+
+# Q-9F.6 generated height-growth allocation audit
+/outputs/article_scenarios/ecouves_a5_height_growth_allocation_audit/*
+!/outputs/article_scenarios/ecouves_a5_height_growth_allocation_audit/.gitkeep
+
+# Q-9F.7 generated status-shape sensitivity outputs
+/outputs/article_scenarios/ecouves_a5_status_shape_sensitivity/*
+!/outputs/article_scenarios/ecouves_a5_status_shape_sensitivity/.gitkeep
+
+# Q-9F.7 generated status-shape mass-balance diagnostics
+/outputs/article_scenarios/ecouves_a5_status_shape_mass_balance/*
+!/outputs/article_scenarios/ecouves_a5_status_shape_mass_balance/.gitkeep

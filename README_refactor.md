@@ -4,16 +4,24 @@
 
 This document summarizes the ongoing refactor of the original `DynamicForestModel_2D.py` script.
 
-The goal is to transform the initial research script into a more structured, modular, maintainable and scientifically traceable codebase, while preserving the numerical and scientific behavior of the original implementation during the transition.
+The manuscript associated with this codebase was initially submitted to the Journal of Mathematical Biology using the legacy Python implementation.
 
-The refactor follows a progressive strategy:
+The goal of the current refactor is to transform this initial research script into a structured, modular, maintainable and scientifically traceable codebase, while preserving the numerical behavior of the legacy implementation in validated reference cases.
 
-1. preserve the original legacy script;
-2. create reduced and short reference cases;
-3. introduce conceptual objects;
-4. separate initial conditions, model laws, numerical routines, diagnostics, solver and outputs;
-5. validate each refactor step against legacy behavior;
-6. progressively improve the numerical implementation.
+The current development line follows the stable refactor tag:
+
+    v0.2.0-refactor
+
+and continues as:
+
+    0.3.0.dev0
+
+The `v0.2.0-refactor` tag corresponds to a modular technical refactor preserving the numerical behavior of the reduced legacy reference case. It should not be interpreted as the exact code version used for the initial manuscript submission.
+
+Subsequent development may prepare or introduce model extensions, but these should be clearly separated from both:
+
+- the legacy implementation associated with the initial manuscript submission;
+- the validated technical refactor milestone.
 
 ## Conceptual architecture
 
@@ -33,7 +41,7 @@ The object `Parameters` separates:
 - `ModelParameters`: scientific and mathematical model assumptions;
 - `NumericalParameters`: grid, time discretization, numerical scheme and solver choices.
 
-This structure is inspired by the conceptual organization previously used in C-STABILITY, where a simulation is defined by an initial state, a set of parameters and a context.
+This structure is inspired by the conceptual organization previously used in C-STABILITY.
 
 ## Main conceptual objects
 
@@ -52,8 +60,19 @@ The current refactor introduces the following objects in `pydynamicforest/types.
 - `SimulationContext`
 - `State`
 - `DerivedQuantities`
+- `ModelFields`
 - `TimeSeries`
 - `SimulationResults`
+
+The `ModelFields` object represents model coefficient fields evaluated on the numerical grid:
+
+- diffusion;
+- mortality;
+- height growth;
+- DBH growth;
+- optional status field.
+
+It prepares future model extensions in which coefficient fields may depend on the current state, derived quantities and the simulation context.
 
 ## Current package structure
 
@@ -89,43 +108,18 @@ The current refactor introduces the following objects in `pydynamicforest/types.
     legacy/
     ├── DynamicForestModel_2D_legacy.py
     ├── DynamicForestModel_2D_reduced_reference.py
-    └── DynamicForestModel_2D_short_reference.py
+    ├── DynamicForestModel_2D_short_reference.py
+    └── article_submission/
+        ├── Modele2DImpliciteV3.py
+        └── README.md
 
     tests/
     reference_outputs/
     outputs/
 
-## Scenario structure
-
-A baseline reduced scenario has been introduced in:
-
-    simulations/baseline/
-
-This scenario defines:
-
-    x0 = build_initial_condition()
-    p = build_parameters()
-    c = build_context()
-
-and can be run through:
-
-    results = simulate(
-        x0,
-        p,
-        c,
-        max_steps=10,
-    )
-
-The baseline scenario separates:
-
-- the initial condition in `initial_condition.py`;
-- model and numerical parameters in `parameters.py`;
-- simulation context and requested observations in `context.py`;
-- the runnable scenario in `run.py`.
-
 ## Baseline scenario configuration
 
-The baseline reduced scenario now uses a centralized Python configuration file:
+The baseline reduced scenario uses a centralized Python configuration file:
 
     simulations/baseline/config.py
 
@@ -148,41 +142,109 @@ The builders:
 
 read their values from this configuration.
 
-This is a first step toward more flexible scenario management.
+The builders can also accept an optional configuration dictionary, for example:
 
-At this stage, the configuration is still expressed as a Python dictionary rather than an external YAML, JSON or TOML file. This avoids introducing an additional dependency and keeps the refactor incremental.
+    config = copy_baseline_config()
+    config["grid"]["nx"] = 10
+    config["grid"]["ny"] = 10
 
-Future scenario-management work may introduce:
+    x0 = build_initial_condition(config)
+    p = build_parameters(config)
+    c = build_context(config)
 
-- alternative baseline configurations;
-- high-resolution sparse configurations;
-- dense debug configurations;
-- alternative growth or mortality scenarios;
-- external configuration files.
+This enables lightweight scenario variants without duplicating the baseline files.
+
+## Baseline presets
+
+The baseline configuration layer provides presets.
+
+Current presets are:
+
+- `baseline`: default reduced baseline scenario;
+- `short-debug`: lightweight sparse-solver debug scenario;
+- `dense-debug`: lightweight dense-solver debug scenario;
+- `state-debug`: lightweight sparse debug scenario using the state-aware model-field evaluation pathway.
+
+They can be selected from the command line:
+
+    pydf-run-baseline --preset baseline
+
+    pydf-run-baseline --preset short-debug
+
+    pydf-run-baseline --preset dense-debug
+
+    pydf-run-baseline --preset state-debug
+
+Internally, presets are built from:
+
+    make_baseline_config()
+    make_short_debug_config()
+    make_dense_debug_config()
+    make_state_debug_config()
+    build_baseline_config_from_preset(...)
+
+Presets are generated from deep copies of `BASELINE_CONFIG`, so the default configuration is not mutated.
+
+## Baseline CLI overrides
+
+The configurable baseline runner supports command-line overrides for selected scenario configuration values.
+
+Available overrides include:
+
+    --nx
+    --ny
+    --n-steps
+    --t-end
+    --initial-age
+    --final-age
+    --observation-ages
+    --model-field-evaluation
+
+For example:
+
+    pydf-run-baseline --preset short-debug --nx 12 --ny 12 --max-steps 5 --output-dir outputs\short_debug_12x12
+
+or:
+
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --preset short-debug --nx 12 --ny 12 --max-steps 5 --output-dir outputs\short_debug_12x12
+
+The model-field evaluation mode can also be selected explicitly:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation legacy --max-steps 5 --output-dir outputs\mfe_legacy_debug
+
+or:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
+The `state-debug` preset provides a shortcut for a lightweight run using the state-aware evaluation pathway:
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\preset_state_debug
+
+These CLI overrides are applied to a deep copy of the selected preset.
 
 ## Configurable baseline run
 
-A configurable command-line script has been added:
+The main baseline command-line script is:
 
     scripts/run_baseline.py
 
-It can run either a short baseline simulation:
+It can be used through the console entry point:
 
-    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+    pydf-run-baseline
 
-or the full reduced baseline simulation:
+or through the module form:
 
-    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline
 
-The equivalent developer commands using `python -m` remain available:
+Examples:
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+    pydf-run-baseline --preset baseline --max-steps 10 --output-dir outputs\baseline_short_cli
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+    pydf-run-baseline --preset short-debug --output-dir outputs\short_debug
 
-The script also allows an explicit solver override for debugging or regression checks:
+    pydf-run-baseline --preset dense-debug --max-steps 2 --output-dir outputs\dense_debug
 
-    pydf-run-baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
 
 By default, the solver is selected from the numerical parameters.
 
@@ -190,7 +252,7 @@ By default, the solver is selected from the numerical parameters.
 
 A minimal `pyproject.toml` file has been added.
 
-The project can now be installed in editable mode with:
+The project can be installed in editable mode with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e .
 
@@ -198,19 +260,17 @@ or with development dependencies:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pip install -e ".[dev]"
 
-The current packaging configuration includes:
+The packaging configuration includes:
 
 - `pydynamicforest`;
 - `simulations`;
 - `scripts`.
 
-This keeps the existing command-line workflow based on `python -m scripts...` functional after editable installation.
-
 ## Console entry points
 
-Console entry points have been added through `pyproject.toml`.
+Console entry points are declared in `pyproject.toml`.
 
-After editable installation, the following commands are available:
+Available commands include:
 
     pydf-run-baseline
     pydf-run-baseline-reduced-sparse
@@ -219,147 +279,15 @@ After editable installation, the following commands are available:
     pydf-plot-observation-comparisons
     pydf-plot-diagnostics
 
-These commands are wrappers around the corresponding script modules.
-
-For example:
-
-    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
-
-is equivalent to:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m scripts.run_baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+These are wrappers around the corresponding script modules.
 
 If the `pydf-*` commands are not found on Windows, check that the `Scripts` directory of the environment is available in the `PATH`.
 
-The executables can also be called explicitly, for example:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\Scripts\pydf-run-baseline.exe --max-steps 10 --output-dir outputs\baseline_short_cli
-
-## Legacy reference
-
-The original script has been preserved in:
-
-    legacy/DynamicForestModel_2D_legacy.py
-
-A reduced reference case has also been created:
-
-    legacy/DynamicForestModel_2D_reduced_reference.py
-
-A short reference case has been created for fast regression checks:
-
-    legacy/DynamicForestModel_2D_short_reference.py
-
-The reduced and short reference cases are used to compare the refactored implementation against the original legacy numerical behavior.
-
-## Current status
-
-The following components have been implemented.
-
-### Initial condition
-
-`pydynamicforest/initial_conditions.py`
-
-- builds the initial Gaussian density;
-- normalizes it to the target number of trees per hectare;
-- returns a `State`.
-
-### Diagnostics
-
-`pydynamicforest/diagnostics.py`
-
-- total mass;
-- trapezoidal mass;
-- legacy mass;
-- mass diagnostics;
-- top height;
-- basal area;
-- minimum density;
-- marginal height distribution;
-- marginal DBH distribution.
-
-### Numerical derived quantities
-
-`pydynamicforest/numerics.py`
-
-- grid index flattening;
-- 2D trapezoidal weights;
-- 2D trapezoidal integration;
-- 2D cumulative trapezoidal integral;
-- status field;
-- derived numerical quantities.
-
-### Model laws
-
-`pydynamicforest/model.py`
-
-- evaluates diffusion;
-- evaluates mortality;
-- evaluates height growth velocity;
-- evaluates DBH growth velocity.
-
-### Solver
-
-`pydynamicforest/solver.py`
-
-- implements a dense legacy-like one-step solver;
-- implements a sparse legacy-like one-step solver;
-- implements a structured simulation loop;
-- supports observation selection by stand age;
-- selects the one-step solver from numerical parameters by default;
-- returns structured `SimulationResults`.
-
-The high-level simulation API is:
-
-    results = simulate(
-        x0,
-        p,
-        c,
-        max_steps=None,
-    )
-
-The solver can still be explicitly overridden if needed:
-
-    results = simulate(x0, p, c, solver_name="dense")
-    results = simulate(x0, p, c, solver_name="sparse")
-
-Available solver names are currently:
-
-- `"dense"`: dense legacy-like solver using `numpy.linalg.solve`;
-- `"sparse"`: sparse legacy-like solver using `scipy.sparse`.
-
-### I/O
-
-`pydynamicforest/io.py`
-
-- exports time series to CSV;
-- exports metadata to JSON;
-- exports a human-readable summary;
-- exports selected observations as `.npz` files;
-- loads exported observations from `.npz` files.
-
-### Plotting
-
-`pydynamicforest/plotting.py`
-
-- plots 2D density fields from exported observations;
-- plots marginal height distributions;
-- plots marginal DBH distributions;
-- plots diagnostic time series;
-- plots comparison figures between observations.
-
-User-facing plotting scripts are available:
-
-    scripts/plot_observations.py
-    scripts/plot_observation_comparisons.py
-    scripts/plot_diagnostics.py
-
-They generate figures from exported observation files and time-series files without rerunning the simulation.
-
 ## Solver selection
 
-The simulation solver is now selected from the numerical parameters by default.
+The simulation solver is selected from the numerical parameters by default.
 
-The standard API is therefore:
+The standard API is:
 
     results = simulate(x0, p, c)
 
@@ -369,15 +297,13 @@ The effective one-step solver is selected from:
 
 Currently supported values are:
 
-- `"dense"`: uses the dense legacy-like solver;
-- `"sparse"`: uses the sparse legacy-like solver.
+- `"dense"`: dense legacy-like solver;
+- `"sparse"`: sparse legacy-like solver.
 
-For the baseline reduced scenario, the numerical parameters are configured as:
+For the baseline reduced scenario:
 
     matrix_storage="sparse"
     linear_solver="scipy.sparse.linalg.spsolve"
-
-Therefore, the default baseline simulation uses the sparse solver.
 
 For regression tests or debugging, the solver can still be explicitly overridden:
 
@@ -387,12 +313,153 @@ or:
 
     results = simulate(x0, p, c, solver_name="sparse")
 
-The simulation metadata records:
+In addition to the dense/sparse solver choice, the numerical parameters now also include a model-field evaluation mode:
 
-- the effective solver used;
-- the requested solver override, if any;
-- the matrix storage mode;
-- the linear solver name.
+    model_field_evaluation="legacy"
+
+The default value `"legacy"` preserves the validated legacy-compatible evaluation pathway. The alternative value `"state"` is intended for future development of state-aware model laws.
+
+## Model field evaluation
+
+The current code distinguishes several model-field evaluation layers.
+
+### Legacy time-based interface
+
+The legacy-compatible interface remains available:
+
+    evaluate_model_fields(p, time=...)
+
+or equivalently in the solver:
+
+    evaluate_model_fields(p, t_current)
+
+This interface preserves compatibility with the existing dense and sparse legacy-like solvers.
+
+It is still the default pathway used by the solver, through the configurable solver-side wrapper described below.
+
+### State-aware interface
+
+A state-aware and context-aware model-field evaluation interface has been introduced:
+
+    evaluate_state_model_fields(
+        p,
+        state,
+        derived=None,
+        context=None,
+    )
+
+This function returns a `ModelFields` object.
+
+It prepares future model extensions where diffusion, mortality or growth laws may depend on:
+
+- the current state `U`;
+- derived quantities;
+- the simulation context.
+
+The interface is designed to support future laws with richer signatures such as:
+
+    law.function(
+        t,
+        x,
+        y,
+        state=state,
+        derived=derived,
+        context=context,
+        parameters=law.parameters,
+    )
+
+while remaining compatible with legacy laws of the form:
+
+    law.function(t, x, y)
+
+The state-aware interface is currently tested with coefficient laws depending on:
+
+- the simulation context;
+- global derived quantities such as `derived.total_mass`;
+- local derived fields such as `derived.status_field`.
+
+These tests are intentionally kept outside the baseline scenario. They validate the future extension mechanism without changing the scientific model currently used by the validated baseline and legacy-regression workflows.
+
+### Solver-side model-field evaluation mode
+
+A solver-side wrapper has been introduced:
+
+    evaluate_model_fields_for_solver(
+        state,
+        p,
+        context=None,
+    )
+
+This function centralizes the choice between the legacy and state-aware model-field evaluation pathways.
+
+The choice is controlled by:
+
+    p.numerics.model_field_evaluation
+
+Currently supported values are:
+
+- `"legacy"`: use the legacy time-based interface;
+- `"state"`: use the state-aware interface.
+
+The baseline configuration uses:
+
+    model_field_evaluation="legacy"
+
+Therefore, the validated numerical behavior remains unchanged by default.
+
+The `"state"` mode is currently preparatory. It allows the solver infrastructure to be progressively migrated toward state-aware model laws, but should be used carefully because future dependencies on `U`, derived quantities or context may change the mathematical and numerical interpretation of the scheme.
+
+At the solver boundary, the two modes now preserve their respective field formats:
+
+- the legacy mode returns the historical dictionary-based field representation;
+- the state mode returns a `ModelFields` object.
+
+The solver accesses coefficient fields through the adapter:
+
+    get_model_field(fields, name)
+
+This allows the current solver internals to handle both representations while progressively migrating away from direct dictionary-based field access.
+
+The helper:
+
+    model_fields_to_legacy_dict(fields)
+
+is still available when an explicit conversion to the legacy dictionary format is needed.
+
+The model-field evaluation mode can also be overridden from the command line:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation legacy --max-steps 5 --output-dir outputs\mfe_legacy_debug
+
+or:
+
+    pydf-run-baseline --preset short-debug --model-field-evaluation state --max-steps 5 --output-dir outputs\mfe_state_debug
+
+The `state-debug` preset provides a convenient shortcut for testing this pathway:
+
+    pydf-run-baseline --preset state-debug --max-steps 5 --output-dir outputs\state_debug
+
+For the current baseline laws, tests verify that the `"legacy"` and `"state"` model-field evaluation modes produce identical coefficient fields for:
+
+- diffusion;
+- mortality;
+- height growth;
+- DBH growth.
+
+This equivalence test provides a guard before any future migration of the solver toward the state-aware pathway.
+
+For the current baseline laws, tests also verify that short simulations run with:
+
+    model_field_evaluation="legacy"
+
+and:
+
+    model_field_evaluation="state"
+
+produce identical final states and diagnostic time series on the `short-debug` preset.
+
+This provides an additional guard before any future migration of the solver toward the state-aware model-field evaluation pathway.
+
+Future state-dependent laws are expected to be introduced first as explicit dependencies on the current state `U^n`, before considering fully implicit nonlinear solves involving `U^{n+1}`.
 
 ## Sparse solver validation
 
@@ -418,19 +485,15 @@ The sparse solver reproduces the reduced legacy reference up to numerical precis
 - final legacy mass;
 - minimum density over the trajectory.
 
-The reduced sparse case currently runs in approximately 9 seconds on the working machine.
-
-The dense solver is retained as a regression reference on small cases, but the sparse solver should now be preferred for practical simulations.
+The dense solver is retained as a regression reference on small cases.
 
 ## Observation management
-
-The simulation context supports observation selection by stand age.
 
 In PyDynamicForest, observations are simulated model states selected for storage and analysis at requested stand ages.
 
 They should not be confused with empirical field observations.
 
-Observation ages are defined in the simulation context through the output specification, for example:
+Observation ages are defined in the simulation context through the output specification:
 
     OutputSpecification(
         observation_ages=[18.0, 45.0, 69.0],
@@ -439,91 +502,40 @@ Observation ages are defined in the simulation context through the output specif
 
 When `save_full_trajectory` is `False`, only states close to the requested stand ages are stored in `results.observations`.
 
-This avoids hard-coded numerical indices such as:
-
-    U[5294, :, :]
-
-and makes output selection closer to the scientific interpretation of the simulation.
-
 ## Observation exports
 
 Selected observations are exported as `.npz` files under:
 
     outputs/<run_name>/observations/
 
-Each observation corresponds to a simulated model state selected at a requested stand age.
-
 Each `.npz` file contains:
 
-- `U`: simulated density field;
-- `time`: simulation time;
-- `age`: stand age;
-- `step_index`: numerical time-step index;
-- `height_grid`: normalized height grid;
-- `dbh_grid`: normalized DBH grid;
-- `height_grid_physical`: height grid in physical units;
-- `dbh_grid_physical`: DBH grid in physical units.
+- `U`;
+- `time`;
+- `age`;
+- `step_index`;
+- `height_grid`;
+- `dbh_grid`;
+- `height_grid_physical`;
+- `dbh_grid_physical`.
 
-The normalized grids are useful for numerical consistency, while the physical grids are useful for biological interpretation and plotting.
+## Plotting
 
-## Observation plotting
+`pydynamicforest/plotting.py` provides reusable plotting functions.
 
-A plotting module has been introduced:
+User-facing plotting commands include:
 
-    pydynamicforest/plotting.py
+    pydf-plot-observations
+    pydf-plot-observation-comparisons
+    pydf-plot-diagnostics
 
-It provides reusable functions to generate figures from exported observations.
-
-Observation plotting scripts include:
-
-    scripts/plot_observations.py
-    scripts/plot_observation_comparisons.py
-
-They generate individual and comparison figures from exported observations.
-
-## Diagnostic time-series plotting
-
-Diagnostic time series are exported to:
-
-    time_series.csv
-
-A plotting utility has been added to generate figures from this file.
-
-The reusable functions are implemented in:
-
-    pydynamicforest/plotting.py
-
-The user-facing script is:
-
-    scripts/plot_diagnostics.py
-
-Typical command:
-
-    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
-
-By default, this reads:
-
-    outputs/baseline_reduced_sparse/time_series.csv
-
-and writes figures to:
-
-    outputs/baseline_reduced_sparse/figures/time_series/
-
-The standard diagnostic figures are:
-
-- total mass;
-- legacy mass;
-- minimum density;
-- top height;
-- basal area.
+The plotting workflow is functional but still provisional in terms of figure quality. A dedicated visualization-quality improvement step is planned for later.
 
 ## End-to-end CLI workflow test
 
-An end-to-end command-line workflow test has been added.
+An end-to-end command-line workflow test verifies the complete user-facing workflow:
 
-It verifies the complete user-facing workflow:
-
-1. run a short configurable baseline simulation;
+1. run a configurable baseline simulation;
 2. export time series, metadata, summary and observations;
 3. plot individual observations;
 4. plot observation comparison figures;
@@ -535,38 +547,15 @@ It can be run with:
 
     C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests\test_end_to_end_cli.py -m e2e
 
-or together with other slow tests:
-
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
-
 ## Mass conventions
 
-The refactor now distinguishes several mass conventions.
+The refactor distinguishes several mass conventions:
 
-### `trapezoidal_mass`
+- `trapezoidal_mass`;
+- `legacy_mass`;
+- `total_mass`.
 
-This is the preferred diagnostic mass in the refactored code.
-
-It uses the two-dimensional trapezoidal quadrature on the normalized height-DBH grid.
-
-### `legacy_mass`
-
-This reproduces the mass formula used in the original legacy script:
-
-    dx * dy * np.sum(U[1:, 1:])
-
-This convention is kept for regression comparisons with the original implementation.
-
-### `total_mass`
-
-This is the default mass diagnostic used by the refactored code.
-
-Currently, `total_mass` is an alias for `trapezoidal_mass`.
-
-Time series now include both:
-
-- `total_mass`;
-- `legacy_mass`.
+The `legacy_mass` convention is kept for regression comparisons with the original implementation.
 
 ## Quadrature utilities
 
@@ -588,92 +577,57 @@ The dense solver still uses the dense legacy linear algebra strategy:
 
 This reproduces the original implementation but is computationally expensive.
 
-The sparse solver should now be preferred for practical simulations, while the dense solver remains useful as a regression reference on small cases.
-
 Other current limitations include:
 
-- quadrature conventions are clearer but still need further scientific review;
+- quadrature conventions still need further scientific review;
 - legacy and diagnostic masses coexist for comparison purposes;
-- plotting is functional but still provisional in terms of figure quality;
+- plotting is functional but still provisional;
 - recruitment is not yet implemented;
 - alternative mortality laws are not yet implemented;
 - alternative growth and status definitions remain to be explored;
-- scenario management is still minimal.
+- nonlinear dependencies on `U`, derived quantities or simulation context remain future model extensions;
+- the current solver uses `model_field_evaluation="legacy"` by default;
+- the `"state"` model-field evaluation mode is available for testing but remains preparatory;
+- the state-aware interface returns `ModelFields`, and the current solver can now access either dictionary-based fields or `ModelFields` through `get_model_field(...)`;
+- the legacy script associated with the initially submitted manuscript is archived for traceability and is not part of the refactored package;
+- the current solver does not yet implement nonlinear fixed-point or Newton iterations.
 
-## Tests
+## Versioning strategy
 
-The current test suite checks:
+The project uses Git tags to distinguish important scientific and technical states of the code.
 
-- initial state construction;
-- diagnostics;
-- mass conventions;
-- quadrature utilities;
-- model field evaluation;
-- derived numerical quantities;
-- dense one-step solver;
-- sparse one-step solver;
-- short simulation loop;
-- sparse simulation against dense simulation;
-- structured exports;
-- observation selection by stand age;
-- observation export and loading;
-- plotting utilities;
-- automatic solver selection from numerical parameters;
-- centralized baseline scenario configuration;
-- editable packaging;
-- console entry points;
-- end-to-end command-line workflow;
-- short legacy reference regression.
+Current tags include:
 
-Tests can be run with:
+- `v0.1.0-original`: original legacy implementation before the modular refactor;
+- `v0.2.0-refactor`: modular technical refactor preserving the numerical behavior of the reduced legacy reference case.
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests
+The `legacy/` directory is currently kept for reproducibility, traceability and regression testing.
 
-Slow tests are excluded by default through `pytest.ini`.
+The current development branch follows `v0.2.0-refactor` and uses version:
 
-To run only slow tests:
+    0.3.0.dev0
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m slow
+The current refactored implementation should be understood as a maintained and extensible reimplementation of the legacy code, not as the exact code version used for the initial manuscript submission.
 
-To run all tests, including slow tests:
+A specific traceability tag for the legacy code associated with the initial manuscript submission may be introduced later if the exact corresponding commit is confirmed and if such a tag is useful.
 
-    C:\Users\saintemarie\.conda\envs\pydynamicforest\python.exe -m pytest tests -m "slow or not slow"
+Future versions may introduce explicit model extensions, such as nonlinear dependencies on the state variable `U`, derived quantities or the simulation context.
 
-## Scripts
+## Relation to the submitted manuscript
 
-The following scripts are currently available.
+The manuscript associated with PyDynamicForest was initially submitted to the Journal of Mathematical Biology using a legacy Python implementation.
 
-### Configurable baseline run
+A legacy script associated with the numerical simulations reported in the initially submitted manuscript is archived in:
 
-    pydf-run-baseline --max-steps 10 --output-dir outputs\baseline_short_cli
+    legacy/article_submission/Modele2DImpliciteV3.py
 
-Full reduced baseline run:
+This file is kept for traceability. It is not part of the refactored `pydynamicforest` package and should not be modified directly.
 
-    pydf-run-baseline --full --output-dir outputs\baseline_reduced_sparse_cli
+The current refactored implementation is a modular technical reimplementation designed to improve maintainability, testing and extensibility while preserving the numerical behavior of validated legacy reference cases.
 
-Explicit dense override:
+The refactored implementation should not be interpreted as the exact code version used for the initial manuscript submission unless explicitly stated by a dedicated tag or release.
 
-    pydf-run-baseline --max-steps 2 --solver-name dense --output-dir outputs\baseline_dense_debug
-
-### Full reduced sparse run
-
-    pydf-run-baseline-reduced-sparse
-
-### Reduced reference comparison
-
-    pydf-compare-reduced-reference
-
-### Observation plotting
-
-    pydf-plot-observations --input-dir outputs\baseline_reduced_sparse
-
-### Observation comparison plotting
-
-    pydf-plot-observation-comparisons --input-dir outputs\baseline_reduced_sparse
-
-### Diagnostic plotting
-
-    pydf-plot-diagnostics --input-file outputs\baseline_reduced_sparse\time_series.csv
+If a cleaned, executable or refactored reproduction of the submitted numerical scenario is needed later, it should be created as a separate file or scenario, rather than by modifying the archived legacy script.
 
 ## License
 
@@ -681,34 +635,20 @@ PyDynamicForest is distributed under the GNU Lesser General Public License v3.0 
 
 SPDX-License-Identifier: LGPL-3.0-or-later
 
-## Versioning strategy
-
-The project uses Git tags to distinguish important scientific and technical states of the code.
-
-Planned tags include:
-
-- `v0.1.0-original`: original research script developed before the modular refactor;
-- `v0.2.0-refactor`: modular technical refactor preserving the numerical behavior of the original model;
-- `v1.0.0-submission`: version used for manuscript submission.
-
-The `legacy/` directory is currently kept for reproducibility and regression testing.
-
-The current refactor version is intended to remain scientifically equivalent to the original model. Future versions may introduce explicit model extensions, such as nonlinear dependencies on the state variable `U` or on derived quantities.
-
 ## Next steps
 
 Recommended next steps:
 
-1. Continue improving observation export and plotting workflows.
-2. Improve scenario configuration and possibly introduce external configuration files.
-3. Further consolidate console entry points and CLI tests.
-4. Further harmonize quadrature rules across diagnostics.
-5. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
-6. Keep the dense solver available for regression checks on small cases.
+1. Continue improving scenario configuration.
+2. Keep the legacy time-based solver path stable until state-aware evaluation is fully validated.
+3. Prepare a controlled migration of the solver toward direct use of `ModelFields` where appropriate.
+4. Further consolidate CLI workflows.
+5. Further harmonize quadrature rules across diagnostics.
+6. Clarify the scientific meaning of diagnostic mass in future outputs and figures.
 7. Prepare future scientific extensions:
    - recruitment;
    - alternative mortality laws;
    - alternative growth functions;
    - alternative status definitions;
-   - silvicultural or environmental scenarios.
+   - nonlinear dependencies on `U`, derived quantities or simulation context.
 8. Continue improving visualization quality in a dedicated future step.

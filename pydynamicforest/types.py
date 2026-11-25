@@ -172,6 +172,7 @@ class NumericalParameters:
     scheme_name: str = "semi_implicit_diffusion_reaction_explicit_upwind_transport"
     matrix_storage: str = "dense"
     linear_solver: str = "numpy.linalg.solve"
+    model_field_evaluation: str = "legacy"
     epsilon_zero_mass: float = 1e-15
     positivity_tolerance: float = 1e-12
     description: Optional[str] = None
@@ -255,6 +256,29 @@ class DerivedQuantities:
     total_mass: Optional[float] = None
     minimum_density: Optional[float] = None
 
+@dataclass
+class ModelFields:
+    """
+    Model coefficient fields evaluated on the numerical grid.
+
+    These fields are currently evaluated from the model parameter laws.
+    In future versions, they may depend explicitly on the current state U
+    and on derived quantities.
+
+    All arrays are expected to have shape:
+
+        (nx, ny)
+
+    where nx is the number of height grid points and ny is the number of
+    DBH grid points.
+    """
+
+    diffusion: np.ndarray
+    mortality: np.ndarray
+    height_growth: np.ndarray
+    dbh_growth: np.ndarray
+    status: Optional[np.ndarray] = None
+    description: Optional[str] = None
 
 @dataclass
 class TimeSeries:

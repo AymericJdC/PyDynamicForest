@@ -152,6 +152,127 @@ def top_height(
     return height_sum / total_trees
 
 
+
+def legacy_top_height(
+    U: np.ndarray,
+    p: Parameters,
+    target_stems_per_ha: float = 100.0,
+) -> float:
+    """Compute top height using the manuscript-associated legacy convention.
+
+    Cells are ordered lexicographically by decreasing physical DBH and then
+    by decreasing physical height, as in ``Modele2DImpliciteV3.py``. Each
+    cell represents ``dx * dy * U[i, j]`` stems per hectare. If the target is
+    reached inside the last selected cell, only the required fraction of that
+    cell is used. The returned value is the arithmetic mean physical height
+    of the selected stems.
+
+    This function is intentionally separate from :func:`top_height`. It exists
+    for traceable reproduction of the diagnostic used by the legacy script;
+    it does not define the revised dominant-height operator for future work.
+    """
+
+    if target_stems_per_ha <= 0.0:
+        raise ValueError("target_stems_per_ha must be strictly positive.")
+
+    grid = p.numerics.grid
+    h_phys = physical_height_grid(p)
+    d_phys = physical_dbh_grid(p)
+
+    cells: list[tuple[float, float, float]] = []
+
+    for i in range(grid.nx):
+        for j in range(grid.ny):
+            number_of_trees = float(grid.dx * grid.dy * U[i, j])
+
+            if number_of_trees > 0.0:
+                cells.append((d_phys[j], h_phys[i], number_of_trees))
+
+    if not cells:
+        return float("nan")
+
+    cells.sort(key=lambda cell: (cell[0], cell[1]), reverse=True)
+
+    total_trees = 0.0
+    height_sum = 0.0
+
+    for _dbh, height, number_trees in cells:
+        remaining = target_stems_per_ha - total_trees
+        used_trees = min(number_trees, remaining)
+
+        height_sum += used_trees * height
+        total_trees += used_trees
+
+        if total_trees >= target_stems_per_ha:
+            break
+
+    if total_trees <= 0.0:
+        return float("nan")
+
+    return height_sum / total_trees
+
+
+def proportional_top_height(
+    U: np.ndarray,
+    p: Parameters,
+    target_stems_per_ha: float = 100.0,
+) -> float:
+    """Compute DBH-threshold top height by proportional class selection.
+
+    Classes above the threshold are selected in full. Within the threshold
+    DBH class, the same fraction is applied to every height cell, preserving
+    its conditional height distribution and avoiding a height tie-break.
+
+    If fewer stems than the target are available, all positive-density cells
+    are used. An empty population returns NaN.
+    """
+    if target_stems_per_ha <= 0.0:
+        raise ValueError("target_stems_per_ha must be strictly positive.")
+
+    grid = p.numerics.grid
+    h_phys = physical_height_grid(p)
+
+    minimum = float(np.min(U))
+    tolerance = p.numerics.positivity_tolerance
+
+    if minimum < -tolerance:
+        raise ValueError(
+            "proportional_top_height requires a non-negative density. "
+            f"Minimum value: {minimum}."
+        )
+
+    non_negative_U = np.maximum(U, 0.0)
+    cell_stems = grid.dx * grid.dy * non_negative_U
+    stems_by_dbh = np.sum(cell_stems, axis=0)
+    total_available = float(np.sum(stems_by_dbh))
+
+    if total_available <= 0.0:
+        return float("nan")
+
+    effective_target = min(target_stems_per_ha, total_available)
+    selected_stems = 0.0
+    weighted_height = 0.0
+
+    for j in range(grid.ny - 1, -1, -1):
+        class_stems = float(stems_by_dbh[j])
+        if class_stems <= 0.0:
+            continue
+
+        remaining = effective_target - selected_stems
+        fraction = min(1.0, remaining / class_stems)
+        weighted_height += fraction * float(
+            np.sum(h_phys * cell_stems[:, j])
+        )
+        selected_stems += fraction * class_stems
+
+        if selected_stems >= effective_target:
+            break
+
+    if selected_stems <= 0.0:
+        return float("nan")
+
+    return weighted_height / selected_stems
+
 def minimum_density(U: np.ndarray) -> float:
     """
     Return the minimum density value.

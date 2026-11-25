@@ -40,9 +40,17 @@ def build_gaussian_initial_density(
 
     X, Y = np.meshgrid(x, y, indexing="ij")
 
+    rho = float(params.get("height_dbh_correlation", 0.0))
+    if not np.isfinite(rho) or abs(rho) >= 1.0:
+        raise ValueError(
+            "height_dbh_correlation must be finite and strictly between -1 and 1."
+        )
+
+    z_h = (X - h0) / sigma_h
+    z_d = (Y - d0) / sigma_d
     gaussian = np.exp(
-        -((X - h0) ** 2) / (2.0 * sigma_h**2)
-        -((Y - d0) ** 2) / (2.0 * sigma_d**2)
+        -0.5 * (z_h**2 - 2.0 * rho * z_h * z_d + z_d**2)
+        / (1.0 - rho**2)
     )
 
     integral = integrate_2d_trapezoidal(gaussian, dx, dy)

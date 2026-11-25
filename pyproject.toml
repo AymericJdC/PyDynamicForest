@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pydynamicforest"
-version = "0.3.0.dev0"
+version = "1.0.0"
 description = "A Python research code for size-structured forest stand dynamics."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "LGPL-3.0-or-later" }
 
 authors = [
+    { name = "Aymeric Jacob de Cordemoy" },
     { name = "Julien SAINTE-MARIE" }
 ]
 
@@ -41,7 +42,11 @@ classifiers = [
 dependencies = [
     "numpy",
     "scipy",
-    "matplotlib"
+    "matplotlib",
+    "openpyxl>=3.1",
+    "pandas>=2.2",
+    "xlrd>=2.0",
+    "tqdm>=4.66",
 ]
 
 [project.optional-dependencies]
@@ -58,8 +63,8 @@ pydf-plot-observation-comparisons = "scripts.plot_observation_comparisons:main"
 pydf-plot-diagnostics = "scripts.plot_diagnostics:main"
 
 [project.urls]
-Repository = "https://github.com/"
-Documentation = "https://github.com/"
+Repository = "https://github.com/AymericJdC/pydynamicforest"
+Documentation = "https://github.com/AymericJdC/pydynamicforest#readme"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -4,19 +4,181 @@ All notable changes to PyDynamicForest will be documented in this file.
 
 The project follows a pragmatic semantic versioning scheme during the research-code refactor phase.
 
+## 1.0.0 — JoMB submission
+
+Version used for the article submitted to the Journal of Mathematical Biology.
+
+### Added
+
+- Vectorised semi-implicit solver (`pydynamicforest/fast_solver.py`) with a
+  direct or conjugate-gradient (Jacobi) linear solve, and
+  `ConstantCoefficientStepper` with an optional exponent of the status in
+  height growth.
+- Reproducible pipeline `studies/ecouves_a5`: height completion,
+  regularisation, calibration, simulation, completion sensitivity, bootstrap,
+  grid and height-status sensitivity studies and figures, driven by one TOML
+  configuration and recorded in a manifest with SHA-256 checksums.
+- Tests of the vectorised solver and of the pipeline on synthetic data.
+- `codemeta.json` and `CITATION.cff` software metadata (Software Heritage and
+  HAL deposits).
+
+### Fixed
+
+- Grid projection of trees with several height components: every component
+  is projected and clipping is counted per tree.
+
+### Changed
+
+- The Écouves A5 prototype scripts moved from the repository root to
+  `legacy/ecouves_prototype/` (unchanged, not maintained).
+- Continuous integration runs on `main` and on `feature/**` branches.
+- `pandas` and `xlrd` (reading of the GIS Coop `.xls` files) are declared
+  dependencies; they are required by `studies/ecouves_a5`.
+
 ## Unreleased
 
-## v0.2.0-refactor - 2026-07-09
+### Added
+
+- Optional simulation progress bar through the Python API:
+
+      simulate(..., progress=True)
+
+- Command-line progress display option:
+
+      pydf-run-baseline --progress
+
+- `tqdm` dependency for optional progress display.
+- Basic GitHub Actions workflow for running automated validation.
+- GitHub Actions `quality` job for:
+  - package import check;
+  - Python compilation check of `pydynamicforest`, `simulations` and `scripts`.
+- GitHub Actions `tests` job for running the fast test suite automatically.
+- Manual GitHub Actions trigger through `workflow_dispatch`.
+- Baseline configuration presets:
+  - `baseline`;
+  - `short-debug`;
+  - `dense-debug`;
+  - `state-debug`.
+- Command-line preset selection through:
+
+      pydf-run-baseline --preset
+
+- Command-line baseline configuration overrides:
+  - `--nx`;
+  - `--ny`;
+  - `--n-steps`;
+  - `--t-end`;
+  - `--initial-age`;
+  - `--final-age`;
+  - `--observation-ages`;
+  - `--model-field-evaluation`;
+  - `--progress`.
+- `ModelFields` type for model coefficient fields evaluated on the numerical grid.
+- Solver model-field access adapter:
+
+      get_model_field(fields, name)
+
+- Explicit conversion helper:
+
+      model_fields_to_legacy_dict(fields)
+
+- State-aware model-field evaluation interface:
+
+      evaluate_state_model_fields(...)
+
+- Solver-side model-field evaluation wrapper:
+
+      evaluate_model_fields_for_solver(...)
+
+- Numerical parameter `model_field_evaluation` with supported values:
+  - `"legacy"`;
+  - `"state"`.
+- Tests for context-dependent coefficient laws.
+- Tests for derived-dependent coefficient laws.
+- Tests comparing legacy and state model-field evaluation modes for the current baseline laws.
+- Tests comparing short simulations run with legacy and state model-field evaluation modes.
+- Tests for solver model-field adapters supporting both dictionary-based fields and `ModelFields`.
+- Tests for simulations with progress display enabled and disabled.
+- Test for parsing the `--progress` command-line flag.
+- Archived manuscript-associated legacy script:
+
+      legacy/article_submission/Modele2DImpliciteV3.py
+
+- Documentation of the distinction between:
+  - the legacy code associated with the initial manuscript submission;
+  - the modular refactored implementation;
+  - future model extension work.
+
+### Changed
+
+- The simulation API can now optionally show progress during time stepping.
+- The baseline CLI can now explicitly enable progress display with `--progress`.
+- The progress bar is disabled by default to preserve silent behavior in tests, CI and scripted workflows.
+- The GitHub Actions test workflow now separates import/syntax checks from the fast test suite.
+- The GitHub Actions workflow now supports manual dispatch from the GitHub interface.
+- The GitHub Actions workflow uses pip caching through `actions/setup-python`.
+- The configurable baseline runner can now select presets and override selected configuration values from the command line.
+- The solver now uses an intermediate model-field evaluation wrapper while preserving the legacy evaluation pathway by default.
+- The solver can now access model coefficient fields through `get_model_field(...)`, allowing it to handle both dictionary-based fields and `ModelFields`.
+- In `model_field_evaluation="legacy"` mode, `evaluate_model_fields_for_solver(...)` returns the historical dictionary-based field representation.
+- In `model_field_evaluation="state"` mode, `evaluate_model_fields_for_solver(...)` now returns a `ModelFields` object.
+- The state-aware model-field pathway is available for testing, but the default validated mode remains `"legacy"`.
+- The development line now explicitly distinguishes:
+  - legacy submission-associated code;
+  - validated technical refactor;
+  - future extensions.
+
+### Documentation
+
+- Documented the optional simulation progress bar.
+- Documented the `--progress` command-line option.
+- Documented that progress display is disabled by default.
+- Documented the expanded GitHub Actions test workflow.
+- Documented the CI `quality` and `tests` jobs.
+- Documented the manual CI trigger through `workflow_dispatch`.
+- Documented that slow tests and end-to-end tests remain manual validation steps.
+- Documented baseline presets and CLI overrides.
+- Documented the state-aware model-field evaluation interface.
+- Documented the configurable model-field evaluation mode.
+- Documented the solver field adapter `get_model_field(...)`.
+- Documented that solver-side `"legacy"` and `"state"` modes preserve their respective field formats.
+- Documented the equivalence tests between legacy and state model-field evaluation modes.
+- Documented the short simulation comparison between legacy and state model-field evaluation modes.
+- Documented the archived legacy script associated with the initially submitted manuscript.
+- Clarified that the manuscript associated with this codebase was initially submitted to the Journal of Mathematical Biology using a legacy Python implementation.
+- Clarified that the current refactored code is a modular technical reimplementation validated against reduced legacy reference cases, not the exact code version used for the initial manuscript submission unless explicitly stated by a dedicated tag or release.
+
+### Notes
+
+The manuscript associated with this codebase was initially submitted to the Journal of Mathematical Biology using a legacy Python implementation.
+
+A legacy script associated with the numerical simulations reported in the initially submitted manuscript is archived in:
+
+    legacy/article_submission/Modele2DImpliciteV3.py
+
+This archived script is kept for traceability. It is not part of the refactored `pydynamicforest` package and should not be modified directly.
+
+The current refactored code is a modular technical reimplementation validated against reduced legacy reference cases. It should not be interpreted as the exact code version used for the initial manuscript submission unless explicitly stated by a dedicated tag or release.
+
+A specific traceability tag for the legacy code associated with the initial manuscript submission may be introduced later if the exact corresponding commit is confirmed and if such a tag is useful.
+
+## v0.2.0-refactor
 
 ### Added
 
 - Modular package structure under `pydynamicforest/`.
-- Structured API based on `simulate(x0, p, c)`.
+- Structured API based on:
+
+      simulate(x0, p, c)
+
 - Dataclasses for initial conditions, parameters, context, states, time series and simulation results.
 - Dense legacy-like one-step solver.
 - Sparse legacy-like one-step solver.
 - Automatic solver selection from numerical parameters.
-- Baseline scenario configuration in `simulations/baseline/config.py`.
+- Baseline scenario configuration in:
+
+      simulations/baseline/config.py
+
 - Configurable baseline command-line script.
 - CSV, JSON, TXT and NPZ result exports.
 - Model observations selected by stand age.
@@ -33,7 +195,10 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 - The baseline reduced scenario now uses the sparse legacy-like solver by default.
 - The solver is selected from `p.numerics.matrix_storage` unless explicitly overridden.
-- Baseline scenario values are centralized in `simulations/baseline/config.py`.
+- Baseline scenario values are centralized in:
+
+      simulations/baseline/config.py
+
 - Snapshot terminology has been replaced by observation terminology.
 - Mass conventions have been clarified:
   - `trapezoidal_mass`;
@@ -42,24 +207,38 @@ The project follows a pragmatic semantic versioning scheme during the research-c
 
 ### Kept for reproducibility
 
-- Legacy scripts are kept under `legacy/`.
-- Reduced legacy reference outputs are kept under `reference_outputs/`.
+- Legacy scripts are kept under:
+
+      legacy/
+
+- Reduced legacy reference outputs are kept under:
+
+      reference_outputs/
+
 - Regression scripts and slow tests compare the refactored sparse solver with the reduced legacy reference.
 
-## Planned tags
+### Scientific status
+
+This version is a modular technical refactor preserving the numerical behavior of the reduced legacy reference case.
+
+It is not the exact version used for the initial manuscript submission to the Journal of Mathematical Biology. The initial manuscript submission used the legacy Python implementation.
+
+## Version tags
 
 ### `v0.1.0-original`
 
-Original research script before modular refactor.
+Original legacy implementation before modular refactor.
 
-This tag is intended to point to the last commit of `main` before the refactor branch.
+This tag is intended to point to the original code state before the refactor branch.
 
 ### `v0.2.0-refactor`
 
-Modular technical refactor preserving the numerical behavior of the original model.
+Modular technical refactor preserving the numerical behavior of the reduced legacy reference case.
 
-This version is intended to remain scientifically equivalent to the original model.
+This version is intended to remain scientifically equivalent to the validated legacy reference cases, while improving modularity, maintainability, testing and extensibility.
 
-### `v1.0.0-submission`
+### Possible future traceability tags
 
-Version used for manuscript submission.
+A specific tag may be introduced later to identify the exact legacy commit associated with the initial manuscript submission, if needed and if the corresponding commit is confirmed.
+
+No final article or accepted-version tag is currently defined.
