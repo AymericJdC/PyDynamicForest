@@ -30,6 +30,8 @@ Version used for the article submitted to the Journal of Mathematical Biology.
 - The Écouves A5 prototype scripts moved from the repository root to
   `legacy/ecouves_prototype/` (unchanged, not maintained).
 - Continuous integration runs on `main` and on `feature/**` branches.
+- `pandas` and `xlrd` (reading of the GIS Coop `.xls` files) are declared
+  dependencies; they are required by `studies/ecouves_a5`.
 
 ## Unreleased
 
