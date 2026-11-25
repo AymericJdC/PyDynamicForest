@@ -13,6 +13,7 @@ can be resumed with ``--from``):
     calibrate     sequential calibration of K, c_phi  -> calibration/
     simulate      trajectory 1985-2020                -> simulation/
     completion    sensitivity to height completion    -> completion/
+    bootstrap     sampling uncertainty of observations -> bootstrap/
     sensitivity   grid study and height-status exponent (long) -> sensitivity/
     figures       figures 1 to 3                      -> figures/
 
@@ -37,6 +38,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from . import bootstrap as bootstrap_mod
 from . import completion as completion_mod
 from . import heights as heights_mod
 from .calibration import calibrate
@@ -44,7 +46,7 @@ from .dynamics import comparison_rows, mean_status, simulate_inventories, summar
 from .regularise import regularise_inventory
 from .settings import DEFAULT_CONFIG, StudyConfig, build_parameters, load_config
 
-STEPS = ("heights", "regularise", "calibrate", "simulate", "completion", "sensitivity", "figures")
+STEPS = ("heights", "regularise", "calibrate", "simulate", "completion", "bootstrap", "sensitivity", "figures")
 
 
 def sha256(path: Path) -> str:
@@ -223,6 +225,21 @@ class Pipeline:
         out = self.dir("completion")
         pd.DataFrame(rows).to_csv(out / "completion_sensitivity.csv", index=False)
         self.record("completion", [out / "completion_sensitivity.csv"], t0)
+
+    def bootstrap(self) -> None:
+        t0 = time.time()
+        bc = self.config.section("bootstrap")
+        rc = self.config.section("regularisation")
+        out = self.dir("bootstrap")
+        samples = bootstrap_mod.bootstrap_diagnostics(
+            self.assigned(), self.config.years, self.parameters(), rc["half_width_height_m"], rc["half_width_dbh_cm"],
+            int(bc["replicates"]), int(bc["seed"]), progress=self._progress("bootstrap"))
+        samples.to_csv(out / "bootstrap_samples.csv.gz", index=False)
+        comparison = pd.read_csv(self.out / "simulation" / "comparison.csv")
+        table = bootstrap_mod.percentile_intervals(samples, comparison, float(bc["level"]))
+        table.to_csv(out / "bootstrap_intervals.csv", index=False)
+        self.record("bootstrap", [out / "bootstrap_samples.csv.gz", out / "bootstrap_intervals.csv"], t0,
+                    replicates=int(bc["replicates"]), seed=int(bc["seed"]))
 
     def sensitivity(self) -> None:
         t0 = time.time()

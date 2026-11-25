@@ -25,7 +25,8 @@ assigned-height table; the step `heights` then only copies it.
 | `calibrate` | `calibration/parameters.json` (and `history.csv`) | ~1 min per evaluation |
 | `simulate` | `simulation/simulated_state_YYYY.npz`, `comparison.csv`, `time_series.csv` | ~1 min |
 | `completion` | `completion/completion_sensitivity.csv` (Table S5) | seconds |
-| `sensitivity` | `sensitivity/grid_study.json`, `height_status_sensitivity.json` | long (625×625 grid) |
+| `bootstrap` | `bootstrap/bootstrap_intervals.csv` (1000 resamplings of the trees) | ~4 min |
+| `sensitivity` | `sensitivity/grid_study.json`, `height_status_sensitivity.json` | ~15–30 min |
 | `figures` | `figures/figure_[1-3]_*.pdf` | seconds |
 
 Options:
@@ -55,6 +56,7 @@ to a relative difference below 1e-13.
 - `dynamics.py`: simulation (`pydynamicforest.fast_solver.ConstantCoefficientStepper`) and diagnostics.
 - `calibration.py`: sequential calibration of `K` and `c_phi`.
 - `completion.py`: sensitivity to the completion of missing heights.
+- `bootstrap.py`: sampling uncertainty of the regularised observations.
 - `figures.py`: Figures 1–3.
 - `run_all.py`: command-line pipeline.
 

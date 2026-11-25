@@ -53,11 +53,26 @@ class StudyConfig:
         return self.raw["model"]
 
 
+def _merge(base: dict, update: dict) -> None:
+    """Recursive update: a user configuration only needs the values it changes."""
+
+    for key, value in update.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            _merge(base[key], value)
+        else:
+            base[key] = value
+
+
 def load_config(path: Path | str = DEFAULT_CONFIG, data_dir: Path | str | None = None, overrides: dict | None = None) -> StudyConfig:
-    """Load the TOML configuration; ``overrides`` replaces values per section."""
+    """Load the TOML configuration over the defaults of ``config.toml``.
+
+    ``overrides`` replaces values per section (used by the tests).
+    """
 
     path = Path(path)
-    raw = tomllib.loads(path.read_text(encoding="utf-8"))
+    raw = tomllib.loads(DEFAULT_CONFIG.read_text(encoding="utf-8"))
+    if path.resolve() != DEFAULT_CONFIG.resolve():
+        _merge(raw, tomllib.loads(path.read_text(encoding="utf-8")))
     for section, values in (overrides or {}).items():
         raw.setdefault(section, {}).update(values)
     return StudyConfig(raw=raw, path=path, data_dir=Path(data_dir) if data_dir else None)

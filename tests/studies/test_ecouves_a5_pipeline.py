@@ -138,12 +138,46 @@ def test_pipeline_end_to_end_on_a_small_grid(tmp_path):
     assigned.to_csv(table, index=False)
     config = load_config(overrides={"data": {"assigned_heights": str(table)}, "inventories": {"ages": [37.0, 37.2, 37.4, 37.6, 37.8]}})
     pipe = Pipeline(config, tmp_path / "out", grid_nodes=21, log=lambda *_: None)
-    pipe.run(["heights", "regularise", "calibrate", "simulate", "completion"])
+    config.raw["bootstrap"]["replicates"] = 3
+    pipe.run(["heights", "regularise", "calibrate", "simulate", "completion", "bootstrap"])
     out = tmp_path / "out"
     manifest = json.loads((out / "manifest.json").read_text())
-    assert set(manifest["steps"]) == {"heights", "regularise", "calibrate", "simulate", "completion"}
+    assert set(manifest["steps"]) == {"heights", "regularise", "calibrate", "simulate", "completion", "bootstrap"}
     assert manifest["steps"]["calibrate"]["source"] == "config [model]"
     comparison = pd.read_csv(out / "simulation" / "comparison.csv")
     assert set(comparison.year) == set(YEARS)
     s5 = pd.read_csv(out / "completion" / "completion_sensitivity.csv")
     assert (s5.Hm_residual - s5.Hm_deterministic).abs().max() < 1e-9
+
+
+def test_partial_user_configuration_is_merged_with_defaults(tmp_path):
+    user = tmp_path / "local.toml"
+    user.write_text('[data]\nassigned_heights = "x.csv"\n[model]\ngrid_nodes = 41\n', encoding="utf-8")
+    config = load_config(user)
+    assert config.raw["data"]["assigned_heights"] == "x.csv"
+    assert config.model["grid_nodes"] == 41 and config.model["mortality"] == 0.0394
+    assert config.raw["bootstrap"]["replicates"] == 1000
+
+
+def test_bootstrap_resampling_conserves_tree_count_and_components():
+    from studies.ecouves_a5.bootstrap import resample_trees
+
+    rows = pd.DataFrame({"tree_id": ["a", "a", "b", "c"], "height_m": [20.0, 22.0, 30.0, 25.0],
+                         "diameter_cm": [20.0, 20.0, 40.0, 30.0], "weight_ha": [5.0, 5.0, 10.0, 10.0]})
+    rng = np.random.default_rng(0)
+    for _ in range(20):
+        s = resample_trees(rows, rng)
+        assert s.weight_ha.sum() == pytest.approx(30.0, rel=0.7)          # 3 trees of weight 10
+        assert s.groupby("tree_id").weight_ha.sum().mod(10).abs().max() < 1e-12
+        if "a" in set(s.tree_id):
+            assert (s.tree_id == "a").sum() == 2
+
+
+def test_bootstrap_intervals_flag_simulated_values_outside():
+    from studies.ecouves_a5.bootstrap import percentile_intervals
+
+    samples = pd.DataFrame({"replicate": range(100), "year": 2020, "metric": "Hm",
+                            "value": np.linspace(36, 40, 100)})
+    comparison = pd.DataFrame({"year": [2020], "metric": ["Hm"], "simulated": [34.3], "observed": [37.9]})
+    t = percentile_intervals(samples, comparison)
+    assert bool(t.outside.iloc[0]) and t.lower.iloc[0] < 37.9 < t.upper.iloc[0]
