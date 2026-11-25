@@ -818,8 +818,14 @@ def select_one_step_solver(
     p.numerics.matrix_storage.
 
     Supported values:
-        - "dense"
-        - "sparse"
+        - "dense": legacy loops, dense direct solve (regression reference);
+        - "sparse": legacy loops, sparse direct solve;
+        - "vectorised": vectorised operators, sparse direct solve;
+        - "vectorised_cg": vectorised operators, Jacobi-preconditioned
+          conjugate gradient.
+
+    The vectorised solvers reproduce the legacy scheme; see
+    :mod:`pydynamicforest.fast_solver`.
     """
 
     if solver_name is not None:
@@ -833,9 +839,19 @@ def select_one_step_solver(
     if selected_solver == "sparse":
         return advance_one_step_sparse_legacy, "sparse_legacy"
 
+    if selected_solver == "vectorised":
+        from pydynamicforest.fast_solver import advance_one_step_vectorised_direct
+
+        return advance_one_step_vectorised_direct, "vectorised_direct"
+
+    if selected_solver == "vectorised_cg":
+        from pydynamicforest.fast_solver import advance_one_step_vectorised_cg
+
+        return advance_one_step_vectorised_cg, "vectorised_cg"
+
     raise ValueError(
         f"Unknown solver selection: {selected_solver}. "
-        "Expected 'dense' or 'sparse'."
+        "Expected 'dense', 'sparse', 'vectorised' or 'vectorised_cg'."
     )
 
 def simulate(
@@ -868,6 +884,8 @@ def simulate(
             Optional solver override:
                 - "dense"
                 - "sparse"
+                - "vectorised"
+                - "vectorised_cg"
 
             If None, the solver is selected from p.numerics.matrix_storage.
 
