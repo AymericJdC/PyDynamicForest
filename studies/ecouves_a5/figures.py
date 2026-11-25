@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 """Step 6: figures 1 to 3 of the article from regularised and simulated states.
 
-Ported from ``generate_ecouves_A5_regularized_figures.py``. The states are read
+Ported from ``legacy/ecouves_prototype/generate_ecouves_A5_regularized_figures.py``. The states are read
 from the pipeline outputs; target observables are recomputed from the
 regularised states with the same operators as the simulated ones.
 """

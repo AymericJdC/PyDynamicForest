@@ -10,7 +10,7 @@ sample therefore conserves stand density and carries the empirical residual
 distribution around the allometry. Heights reported as ``HbH``/``ht_vv`` are
 never used as total heights.
 
-This module ports ``build_ecouves_regularized_targets.py`` (steps 1 to 5 of
+This module ports ``legacy/ecouves_prototype/build_ecouves_regularized_targets.py`` (steps 1 to 5 of
 that script) into testable functions.
 """
 

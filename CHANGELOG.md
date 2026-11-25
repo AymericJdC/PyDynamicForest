@@ -4,6 +4,33 @@ All notable changes to PyDynamicForest will be documented in this file.
 
 The project follows a pragmatic semantic versioning scheme during the research-code refactor phase.
 
+## 1.0.0 — JoMB submission
+
+Version used for the article submitted to the Journal of Mathematical Biology.
+
+### Added
+
+- Vectorised semi-implicit solver (`pydynamicforest/fast_solver.py`) with a
+  direct or conjugate-gradient (Jacobi) linear solve, and
+  `ConstantCoefficientStepper` with an optional exponent of the status in
+  height growth.
+- Reproducible pipeline `studies/ecouves_a5`: height completion,
+  regularisation, calibration, simulation, completion sensitivity, bootstrap,
+  grid and height-status sensitivity studies and figures, driven by one TOML
+  configuration and recorded in a manifest with SHA-256 checksums.
+- Tests of the vectorised solver and of the pipeline on synthetic data.
+
+### Fixed
+
+- Grid projection of trees with several height components: every component
+  is projected and clipping is counted per tree.
+
+### Changed
+
+- The Écouves A5 prototype scripts moved from the repository root to
+  `legacy/ecouves_prototype/` (unchanged, not maintained).
+- Continuous integration runs on `main` and on `feature/**` branches.
+
 ## Unreleased
 
 ### Added

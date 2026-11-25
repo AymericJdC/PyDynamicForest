@@ -3,11 +3,10 @@ name: Tests
 on:
   push:
     branches:
-      - refactor-julien
+      - main
       - "feature/**"
   pull_request:
     branches:
-      - refactor-julien
       - main
   workflow_dispatch:
 
@@ -43,7 +42,7 @@ jobs:
 
       - name: Compile package and support modules
         run: |
-          python -m compileall pydynamicforest simulations scripts
+          python -m compileall pydynamicforest simulations scripts studies
 
   tests:
     name: Fast test suite

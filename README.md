@@ -3,45 +3,64 @@
 PyDynamicForest is a Python research code for simulating size-structured forest stand dynamics.
 
 The model describes the evolution of a tree density distribution structured by height and DBH.
-The repository is currently being refactored from an initial research script into a modular, maintainable and scientifically traceable codebase.
+It was refactored from an initial research script into a modular, tested and scientifically traceable codebase.
 
 ## Current status
 
-The current refactor introduces the API:
+Version 1.0.0 is the version used for the article
+
+> A. Jacob de Cordemoy, J. Sainte-Marie and T. Takahashi,
+> *A well-posed height–diameter population model of forest stand dynamics
+> with a non-local size hierarchy*, submitted to the Journal of Mathematical
+> Biology.
+
+All numerical results of this article, from the completion of missing tree
+heights to Figures 1–3 and the tables of Online Resource 1, are produced by
+the pipeline `studies/ecouves_a5` (see below).
+
+The general simulation API is
 
     results = simulate(x0, p, c)
 
-where:
+where `x0` is an `InitialCondition`, `p` a `Parameters` object, `c` a
+`SimulationContext` and `results` a `SimulationResults` object. The solver is
+selected from the numerical parameters and can be overridden
+(`solver_name="dense"`, `"sparse"`, `"vectorised"` or `"vectorised_cg"`). The
+vectorised solver (`pydynamicforest/fast_solver.py`) assembles the
+semi-implicit scheme with sparse diagonals and solves the symmetric positive
+definite system by a direct method or by the conjugate gradient method with a
+Jacobi preconditioner; it reproduces the reference implementation to
+numerical precision.
 
-- `x0` is an `InitialCondition`;
-- `p` is a `Parameters` object;
-- `c` is a `SimulationContext`;
-- `results` is a `SimulationResults` object.
+## Reproducing the results of the JoMB article
 
-The solver is selected automatically from the numerical parameters.
+From the repository root:
 
-For the baseline reduced scenario, the default solver is the sparse legacy-like solver.
+    python -m studies.ecouves_a5.run_all --config CONFIG.toml --output-dir OUT --with-sensitivity
 
-The solver can still be explicitly overridden when needed, for example for regression tests:
+`CONFIG.toml` only needs the values that differ from
+`studies/ecouves_a5/config.toml`, usually the paths of the input files.
+`OUT/manifest.json` records the configuration, the code version, the library
+versions and the SHA-256 checksums of the inputs and of every output. The
+main trajectory on the 313×313 grid takes about 1 min, the bootstrap about
+4 min and the grid and sensitivity studies about 20 min. Details are given in
+`studies/ecouves_a5/README.md`.
 
-    results = simulate(x0, p, c, solver_name="dense")
-    results = simulate(x0, p, c, solver_name="sparse")
-
-The sparse solver has been validated against the reduced legacy reference case up to numerical precision.
-
-The current development version is `0.3.0.dev0`, following the stable refactor tag:
-
-    v0.2.0-refactor
+The individual-tree records of the Écouves A5 trial belong to the GIS
+Coopérative de données sur la croissance des peuplements forestiers (GIS
+Coop) and are not distributed with this repository. They can be requested
+from the GIS Coop.
 
 ## Main structure
 
-    pydynamicforest/
-    simulations/
-    scripts/
-    legacy/
-    tests/
-    reference_outputs/
-    outputs/
+    pydynamicforest/     model, solvers and diagnostics
+    studies/ecouves_a5/  reproducible pipeline of the JoMB article
+    simulations/         baseline and development scenarios
+    scripts/             command-line tools of the refactor
+    tests/               test suite (fast tests run in CI)
+    legacy/              original scripts, kept unchanged for traceability
+    reference_outputs/   reference outputs of the legacy implementation
+    docs/                development notes and audits
 
 ## Installation
 
@@ -384,7 +403,7 @@ Detailed refactor notes are available in:
 
 ## Current limitations
 
-The code is still under active refactoring.
+Outside the pipeline of the JoMB article, parts of the code are still being refactored.
 
 The dense solver is retained for regression checks but is computationally expensive.
 
@@ -416,7 +435,7 @@ This code originates from the IDEAForDynamics project.
 
 ### Refactor
 
-- **Julien SAINTE-MARIE** — current refactor toward a modular research code.
+- **Julien SAINTE-MARIE** — refactor toward a modular research code and reproducible pipeline of the JoMB article.
 
 ### IDEAForDynamics project members
 
