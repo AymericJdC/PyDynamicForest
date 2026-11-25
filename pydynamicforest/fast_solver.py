@@ -225,3 +225,72 @@ def advance_one_step_vectorised_cg(state: State, p: Parameters) -> State:
     """Vectorised step with Jacobi-preconditioned conjugate gradient."""
 
     return advance_one_step_vectorised(state, p, linear_solver="cg")
+
+
+class ConstantCoefficientStepper:
+    """Vectorised stepper for time-independent model fields.
+
+    The face velocities and the diffusion part of the implicit matrix are
+    assembled once; each step only updates the status, the transport term and
+    the mortality diagonal. With ``height_status_exponent = 1`` a step is
+    identical to :func:`advance_one_step_vectorised` (tested). Other exponents
+    replace ``S`` by ``S**gamma`` in the height component of the transport
+    only, for sensitivity analyses; ``gamma < 1`` is not Lipschitz at ``S = 0``
+    and lies outside the analysed class of models.
+    """
+
+    def __init__(
+        self,
+        p: Parameters,
+        linear_solver: str = "cg",
+        height_status_exponent: float = 1.0,
+        check_time_independence: bool = True,
+    ) -> None:
+        if linear_solver not in LINEAR_SOLVERS:
+            raise ValueError(f"Unknown linear solver: {linear_solver}.")
+        if not np.isfinite(height_status_exponent) or height_status_exponent < 0.0:
+            raise ValueError("height_status_exponent must be finite and non-negative.")
+        grid = p.numerics.grid
+        self.p = p
+        self.linear_solver = linear_solver
+        self.gamma = float(height_status_exponent)
+        self.dt = p.numerics.time.dt
+        self.dx, self.dy = grid.dx, grid.dy
+        fields = evaluate_model_fields(p, 0.0)
+        if check_time_independence:
+            later = evaluate_model_fields(p, p.numerics.time.dt * max(p.numerics.time.n_steps, 1))
+            for name in ("diffusion", "mortality", "height_growth", "dbh_growth"):
+                if not np.array_equal(_field(fields, name), _field(later, name)):
+                    raise ValueError(f"model field '{name}' depends on time; use advance_one_step_vectorised.")
+        Ch, Cd = _field(fields, "height_growth"), _field(fields, "dbh_growth")
+        self.mortality = np.asarray(_field(fields, "mortality"), dtype=float)
+        self.sum_x = Ch[1:, :] + Ch[:-1, :]
+        self.sum_y = Cd[:, 1:] + Cd[:, :-1]
+        zero = np.zeros((grid.nx, grid.ny))
+        dummy = State(time=0.0, age=0.0, U=zero, step_index=0)
+        derived0 = DerivedQuantities(cumulative_distribution=zero, status_field=zero, total_mass=0.0, minimum_density=0.0)
+        no_mortality = dict(diffusion=_field(fields, "diffusion"), mortality=np.zeros_like(zero))
+        A0, _ = assemble_sparse_system_vectorised(dummy, p, derived0, no_mortality, zero)
+        self.A0 = A0.tocsr()
+
+    def status(self, U: np.ndarray) -> np.ndarray:
+        J = cumulative_integral_2d_trapezoidal_vectorised(U, self.dx, self.dy)
+        return compute_status_field(J, float(J[-1, -1]), self.p.numerics.epsilon_zero_mass)
+
+    def transport(self, U: np.ndarray, S: np.ndarray) -> np.ndarray:
+        Sh = S if self.gamma == 1.0 else np.clip(S, 0.0, 1.0) ** self.gamma
+        qx, qy = Sh * U, S * U
+        flux_x = 0.5 * self.sum_x * np.where(self.sum_x >= 0.0, qx[:-1, :], qx[1:, :])
+        flux_y = 0.5 * self.sum_y * np.where(self.sum_y >= 0.0, qy[:, :-1], qy[:, 1:])
+        T = np.zeros_like(U, dtype=float)
+        T[:-1, :] += flux_x / self.dx
+        T[1:, :] -= flux_x / self.dx
+        T[:, :-1] += flux_y / self.dy
+        T[:, 1:] -= flux_y / self.dy
+        return T
+
+    def step(self, U: np.ndarray) -> np.ndarray:
+        S = self.status(U)
+        b = (U - self.dt * self.transport(U, S)).ravel()
+        A = self.A0 + sp.diags((self.dt * self.mortality * (1.0 - S)).ravel())
+        return solve_linear_system(A, b, method=self.linear_solver, x0=U.ravel()).reshape(U.shape)

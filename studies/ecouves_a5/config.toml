@@ -1,0 +1,57 @@
+# Configuration of the Écouves A5 study (JoMB article).
+
+[data]
+# Paths are absolute or relative to --data-dir. The raw inventory files are
+# restricted and not distributed with the repository. Step "heights" reads
+# the three files below; when they are unavailable, set "assigned_heights" to
+# an existing assigned-height table and start at step "regularise".
+inventory_long = "ecouves_a5_inventory_long.csv"
+gis = "fichier Gis-coop- EcouvesFichierCoop-201213.xls"
+francois = "fichier Francois- -Ecouves-Temoins et Base H ouppier.xls"
+assigned_heights = ""
+
+# SHA-256 of the inputs used for the article; a mismatch is reported in the manifest.
+[data.sha256]
+inventory_long = "d42d1a982a5034f497af5630753ac4acf1a16af76f8827413030e3fec4d2aaad"
+gis = "19fe2f96c6b9ada6198ef99fedb8f77fe13636f04ba5de5b2d991ff22bd4bd3f"
+francois = "d1197c9994ffe58a149070bcdbbc0329178b9c20c6b256f4b428bfce1c79cd4b"
+
+[inventories]
+years = [1985, 1992, 1998, 2016, 2020]
+ages = [37.0, 44.0, 50.0, 68.0, 72.0]
+plot_area_ha = 0.1216
+
+[heights]
+# Allometry h = b0 + b1 log(D), fitted on measured heights of plots A1, A2, A5.
+# 1998 has no measured height and uses the 2001 fit.
+allometry_source_year = { 1985 = 1985, 1992 = 1992, 1998 = 2001, 2016 = 2016, 2020 = 2020 }
+plot_codes = { A1 = 10780, A2 = 10781, A5 = 10784 }
+minimum_sample = 10
+
+[regularisation]
+# Tensor-product triangular kernel, fixed in physical units (grid independent).
+half_width_height_m = 1.2820512820512822   # 50 / 39
+half_width_dbh_cm = 2.5641025641025643     # 100 / 39
+
+[model]
+grid_nodes = 313
+height_growth_rate = 1.66        # c_h (m/yr), fixed a priori
+dbh_growth_rate = 0.0164         # c_phi (m/yr), calibrated
+mortality = 0.0394               # K (1/yr), calibrated
+diffusion_scale = 1.0            # multiplier of the article diffusion (1e-5 /yr, normalised coordinates)
+linear_solver = "cg"
+
+[calibration]
+# Sequential calibration: K minimises J_N (log N), then c_phi minimises J_D (log Dm),
+# over the inventories after the initial one; two alternating passes.
+enabled = false                  # the values of [model] are used when false
+passes = 2
+relative_bracket = 0.03
+relative_tolerance = 1e-4
+
+[sensitivity]
+grid_nodes = [40, 79, 157, 313, 625]
+height_status_exponents = [0.0, 0.25, 0.5, 0.75]
+
+[figures]
+usetex = false                   # true requires a LaTeX installation with cm-super

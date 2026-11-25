@@ -147,3 +147,29 @@ def test_short_simulation_matches_sparse_legacy(setup, name):
     assert new.metadata["solver"] in ("vectorised_direct", "vectorised_cg")
     assert _close(new.final_state.U, ref.final_state.U, rtol=1e-10)
     assert new.time_series.total_mass[-1] == pytest.approx(ref.time_series.total_mass[-1], rel=1e-12)
+
+
+@pytest.mark.parametrize("solver", ["direct", "cg"])
+def test_constant_coefficient_stepper_matches_one_step(setup, solver):
+    from pydynamicforest.fast_solver import ConstantCoefficientStepper, advance_one_step_vectorised
+
+    _, p, _, state = setup
+    stepper = ConstantCoefficientStepper(p, linear_solver=solver)
+    U = stepper.step(state.U)
+    assert _close(U, advance_one_step_vectorised(state, p, linear_solver=solver).U, rtol=1e-11)
+
+
+def test_height_status_exponent_changes_only_height_transport(setup):
+    from pydynamicforest.fast_solver import ConstantCoefficientStepper
+
+    _, p, _, state = setup
+    a = ConstantCoefficientStepper(p, height_status_exponent=1.0)
+    b = ConstantCoefficientStepper(p, height_status_exponent=0.5)
+    S = a.status(state.U)
+    assert not np.allclose(a.transport(state.U, S), b.transport(state.U, S))
+    p0 = a.p
+    a.sum_x = np.zeros_like(a.sum_x)
+    b.sum_x = np.zeros_like(b.sum_x)
+    assert _close(a.transport(state.U, S), b.transport(state.U, S), rtol=1e-15)
+    with pytest.raises(ValueError):
+        ConstantCoefficientStepper(p0, height_status_exponent=-1.0)
