@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "PyDynamicForest"
+version: "1.0.0"
+license: LGPL-3.0-or-later
+repository-code: "https://github.com/AymericJdC/pydynamicforest"
+authors:
+  - family-names: "Jacob de Cordemoy"
+    given-names: "Aymeric"
+  - family-names: "Sainte-Marie"
+    given-names: "Julien"
+keywords:
+  - forest dynamics
+  - size-structured population model
+  - height-diameter distribution

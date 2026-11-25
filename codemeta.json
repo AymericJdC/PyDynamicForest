@@ -1,0 +1,44 @@
+{
+  "@context": "https://w3id.org/codemeta/3.0",
+  "@type": "SoftwareSourceCode",
+  "name": "PyDynamicForest",
+  "description": "Python research code for forest stand dynamics described by a tree density structured by height and diameter at breast height (DBH), with a non-local size hierarchy. Version 1.0.0 produces the numerical results of the article 'A well-posed height–diameter population model of forest stand dynamics with a non-local size hierarchy' (pipeline studies/ecouves_a5).",
+  "version": "1.0.0",
+  "softwareVersion": "1.0.0",
+  "license": "https://spdx.org/licenses/LGPL-3.0-or-later",
+  "codeRepository": "https://github.com/AymericJdC/pydynamicforest",
+  "programmingLanguage": "Python",
+  "runtimePlatform": "Python 3.11",
+  "softwareRequirements": [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pandas>=2.2",
+    "xlrd>=2.0",
+    "openpyxl>=3.1",
+    "tqdm>=4.66"
+  ],
+  "keywords": [
+    "forest dynamics",
+    "size-structured population model",
+    "height–diameter distribution",
+    "non-local equation",
+    "finite differences",
+    "Douglas-fir"
+  ],
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Aymeric",
+      "familyName": "Jacob de Cordemoy"
+    },
+    {
+      "@type": "Person",
+      "givenName": "Julien",
+      "familyName": "Sainte-Marie"
+    }
+  ],
+  "funding": "Interdisciplinary programme ARTEMIS of Lorraine Université d'Excellence (ANR-15-IDEX-04-LUE)",
+  "developmentStatus": "active",
+  "readme": "https://github.com/AymericJdC/pydynamicforest#readme"
+}

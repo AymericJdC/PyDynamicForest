@@ -19,6 +19,8 @@ Version used for the article submitted to the Journal of Mathematical Biology.
   grid and height-status sensitivity studies and figures, driven by one TOML
   configuration and recorded in a manifest with SHA-256 checksums.
 - Tests of the vectorised solver and of the pipeline on synthetic data.
+- `codemeta.json` and `CITATION.cff` software metadata (Software Heritage and
+  HAL deposits).
 
 ### Fixed
 
