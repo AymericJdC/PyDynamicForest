@@ -4,12 +4,19 @@ The compact bilinear (cloud-in-cell) projection distributes each tree over at
 most four neighbouring grid nodes. Nodal density is obtained by dividing nodal
 mass by tensor trapezoidal weights. Consequently trapezoidal integration
 preserves total density and both first moments up to floating-point precision.
+
+A tree may carry several height components (for instance a missing height
+completed with the empirical residual distribution of an allometric fit). All
+valid components of a tree are projected; component ``k`` receives the weight
+``weight_ha * f_k / sum(f)``, where ``f_k`` is the optional
+``metadata["weight_fraction"]`` of the component (equal fractions by default).
 """
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from collections.abc import Sequence
 import math
+from collections import defaultdict
 import numpy as np
 from .height_types import TreeRecord, HeightAssignment
 
@@ -61,31 +68,43 @@ def _bracket(nodes,value,policy):
     j=int(np.searchsorted(nodes,x,side="right")-1); j=max(0,min(j,len(nodes)-2))
     t=(x-nodes[j])/(nodes[j+1]-nodes[j]); return j,j+1,1-t,t,clipped
 
-def _valid_pairs(trees,assignment):
-    by={(h.tree_id,h.year):h for h in assignment.heights}; pairs=[]; missing=0
+def _valid_components(trees,assignment):
+    """Return the weighted height components of each tree and the number of trees without any.
+
+    Each element is ``(tree, height_m, weight_ha)``. Several components may
+    belong to the same tree; their weights sum to ``tree.weight_ha``.
+    """
+    by=defaultdict(list)
+    for h in assignment.heights: by[(h.tree_id,h.year)].append(h)
+    components=[]; missing=0
     for t in trees:
-        h=by.get((t.tree_id,t.year))
-        if h is None or h.is_missing or h.height_m is None: missing+=1
-        else: pairs.append((t,float(h.height_m)))
-    return pairs,missing
+        valid=[h for h in by.get((t.tree_id,t.year),()) if not h.is_missing and h.height_m is not None]
+        if not valid: missing+=1; continue
+        fractions=[float(h.metadata.get("weight_fraction",1.0)) for h in valid]
+        if any(not math.isfinite(f) or f<=0 for f in fractions):
+            raise ValueError(f"invalid weight_fraction for tree {t.tree_id} in {t.year}")
+        total=sum(fractions)
+        components.extend((t,float(h.height_m),t.weight_ha*f/total) for h,f in zip(valid,fractions))
+    return components,missing
 
 def project_trees_to_grid(trees:Sequence[TreeRecord],assignment:HeightAssignment,grid:ProjectionGrid,
                           boundary_policy:BoundaryPolicy=BoundaryPolicy.STRICT)->ProjectedState:
-    policy=BoundaryPolicy(boundary_policy); pairs,missing=_valid_pairs(trees,assignment)
-    mass=np.zeros((len(grid.height_m),len(grid.diameter_cm)),dtype=float); clipped_count=0
-    for tree,height in pairs:
+    policy=BoundaryPolicy(boundary_policy); components,missing=_valid_components(trees,assignment)
+    mass=np.zeros((len(grid.height_m),len(grid.diameter_cm)),dtype=float); clipped=set()
+    for tree,height,weight in components:
         h0,h1,ah0,ah1,ch=_bracket(grid.height_m,height,policy)
         d0,d1,ad0,ad1,cd=_bracket(grid.diameter_cm,tree.diameter_cm,policy)
-        clipped_count += int(ch or cd)
+        if ch or cd: clipped.add((tree.tree_id,tree.year))
         for ih,wh in ((h0,ah0),(h1,ah1)):
             for id_,wd in ((d0,ad0),(d1,ad1)):
-                mass[ih,id_] += tree.weight_ha*wh*wd
+                mass[ih,id_] += weight*wh*wd
+    clipped_count=len(clipped); projected=len({(t.tree_id,t.year) for t,_,_ in components})
     q=np.outer(trapezoidal_weights(grid.height_m),trapezoidal_weights(grid.diameter_cm))
     density=np.divide(mass,q,out=np.zeros_like(mass),where=q>0)
     warnings=[]
     if missing: warnings.append(f"{missing} tree(s) omitted because height is missing.")
     if clipped_count: warnings.append(f"{clipped_count} tree(s) clipped to grid boundaries.")
-    return ProjectedState(grid,density,mass,len(trees),len(pairs),missing,clipped_count,tuple(warnings))
+    return ProjectedState(grid,density,mass,len(trees),projected,missing,clipped_count,tuple(warnings))
 
 def _dominant_height_atoms(atoms,target=100.0):
     available=sum(w for d,h,w in atoms)
@@ -100,7 +119,7 @@ def _dominant_height_atoms(atoms,target=100.0):
     return num/sel
 
 def projection_diagnostics(trees,assignment,state):
-    pairs,missing=_valid_pairs(trees,assignment); atoms_in=[(t.diameter_cm,h,t.weight_ha) for t,h in pairs]
+    components,missing=_valid_components(trees,assignment); atoms_in=[(t.diameter_cm,h,w) for t,h,w in components]
     atoms_grid=[]
     for i,h in enumerate(state.grid.height_m):
         for j,d in enumerate(state.grid.diameter_cm):
