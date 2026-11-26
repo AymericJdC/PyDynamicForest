@@ -118,13 +118,15 @@ def read_measured_heights(path) -> pd.DataFrame:
     from the circumference exactly as in those readers.
     """
 
-    df = pd.read_csv(path, dtype={"plot": str, "tree_id": str, "origin": str}, float_precision="round_trip")
+    # read as text and convert with Python's float(), which is exact for the
+    # shortest round-trip representation written by pandas
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
     missing = set(MEASURED_HEIGHT_COLUMNS) - set(df.columns)
     if missing:
         raise ValueError(f"measured-height table lacks columns {sorted(missing)}")
-    df["year"] = df["year"].astype(int)
-    df["circumference_cm"] = df["circumference_cm"].astype(float)
-    df["height_m"] = df["height_m"].astype(float)
+    df["year"] = df["year"].map(int)
+    df["circumference_cm"] = df["circumference_cm"].map(float)
+    df["height_m"] = df["height_m"].map(float)
     df.insert(4, "dbh_cm", df["circumference_cm"] / math.pi)
     return df[["plot", "tree_id", "year", "circumference_cm", "dbh_cm", "height_m", "origin"]]
 
