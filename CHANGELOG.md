@@ -4,6 +4,15 @@ All notable changes to PyDynamicForest will be documented in this file.
 
 The project follows a pragmatic semantic versioning scheme during the research-code refactor phase.
 
+## Unreleased
+
+### Added
+
+- Published Écouves A5 dataset: `studies/ecouves_a5/dataset.py` exports the
+  tree inventories and measured heights from the source files, and the
+  pipeline reads them through `[data] trees` and `[data] measured_heights`,
+  with results identical to those obtained from the source files.
+
 ## 1.0.0 — JoMB submission
 
 Version used for the article submitted to the Journal of Mathematical Biology.

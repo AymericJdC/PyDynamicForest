@@ -138,17 +138,24 @@ class Pipeline:
             summary = None
             self.log(f"heights: using the prepared table {prepared}")
         else:
-            paths = {k: c.data_path(k) for k in ("inventory_long", "gis", "francois")}
+            # published dataset (trees, measured_heights) if given, otherwise the source files
+            published = {k: c.data_path(k) for k in ("trees", "measured_heights")}
+            keys = (("trees" if published["trees"] else "inventory_long",)
+                    + (("measured_heights",) if published["measured_heights"] else ("gis", "francois")))
+            paths = {k: c.data_path(k) for k in keys}
             for k, path in paths.items():
                 if path is None or not path.is_file():
                     raise FileNotFoundError(f"[data] {k}: {path}")
                 inputs[k] = sha256(path)
             hc = c.section("heights")
-            population = heights_mod.read_population(paths["inventory_long"], c.years)
-            measured = pd.concat([
-                heights_mod.read_gis_measured_heights(paths["gis"], hc["plot_codes"]),
-                heights_mod.read_francois_measured_heights(paths["francois"], list(hc["plot_codes"])),
-            ], ignore_index=True)
+            population = heights_mod.read_population(paths.get("trees") or paths["inventory_long"], c.years)
+            if "measured_heights" in paths:
+                measured = heights_mod.read_measured_heights(paths["measured_heights"])
+            else:
+                measured = pd.concat([
+                    heights_mod.read_gis_measured_heights(paths["gis"], hc["plot_codes"]),
+                    heights_mod.read_francois_measured_heights(paths["francois"], list(hc["plot_codes"])),
+                ], ignore_index=True)
             source = {int(k): int(v) for k, v in hc["allometry_source_year"].items()}
             assigned, summary = heights_mod.complete_heights(population, measured, source, hc["minimum_sample"])
         expected = c.raw["data"].get("sha256", {})

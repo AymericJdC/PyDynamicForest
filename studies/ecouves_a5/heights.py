@@ -85,8 +85,8 @@ def read_gis_measured_heights(path, plot_codes: Mapping[str, int], years=(1985, 
                 if c is None or h is None:
                     continue
                 rows.append({"plot": plot, "tree_id": tree_key(r.no_arb), "year": year,
-                             "dbh_cm": c / math.pi, "height_m": _height_in_metres(h),
-                             "origin": "GIS_hauteur_ech"})
+                             "circumference_cm": c, "dbh_cm": c / math.pi,
+                             "height_m": _height_in_metres(h), "origin": "GIS_hauteur_ech"})
     return pd.DataFrame(rows)
 
 
@@ -102,9 +102,31 @@ def read_francois_measured_heights(path, plots) -> pd.DataFrame:
                 if c is None or h is None:
                     continue
                 rows.append({"plot": plot, "tree_id": tree_key(r.Num), "year": year,
-                             "dbh_cm": c / math.pi, "height_m": _height_in_metres(h),
-                             "origin": f"Francois_Ht{s}"})
+                             "circumference_cm": c, "dbh_cm": c / math.pi,
+                             "height_m": _height_in_metres(h), "origin": f"Francois_Ht{s}"})
     return pd.DataFrame(rows)
+
+
+MEASURED_HEIGHT_COLUMNS = ("plot", "tree_id", "year", "circumference_cm", "height_m", "origin")
+
+
+def read_measured_heights(path) -> pd.DataFrame:
+    """Measured height table of the published dataset (``ecouves_measured_heights.csv``).
+
+    The table holds the pairs read by :func:`read_gis_measured_heights` and
+    :func:`read_francois_measured_heights`, in the same order; DBH is recomputed
+    from the circumference exactly as in those readers.
+    """
+
+    df = pd.read_csv(path, dtype={"plot": str, "tree_id": str, "origin": str}, float_precision="round_trip")
+    missing = set(MEASURED_HEIGHT_COLUMNS) - set(df.columns)
+    if missing:
+        raise ValueError(f"measured-height table lacks columns {sorted(missing)}")
+    df["year"] = df["year"].astype(int)
+    df["circumference_cm"] = df["circumference_cm"].astype(float)
+    df["height_m"] = df["height_m"].astype(float)
+    df.insert(4, "dbh_cm", df["circumference_cm"] / math.pi)
+    return df[["plot", "tree_id", "year", "circumference_cm", "dbh_cm", "height_m", "origin"]]
 
 
 def read_population(path, years) -> pd.DataFrame:

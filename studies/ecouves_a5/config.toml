@@ -1,10 +1,13 @@
 # Configuration of the Écouves A5 study (JoMB article).
 
 [data]
-# Paths are absolute or relative to --data-dir. The raw inventory files are
-# restricted and not distributed with the repository. Step "heights" reads
-# the three files below; when they are unavailable, set "assigned_heights" to
-# an existing assigned-height table and start at step "regularise".
+# Paths are absolute or relative to --data-dir. Step "heights" reads either
+# the two tables of the published dataset ("trees", "measured_heights"), or
+# the three source files below; the published tables take precedence when
+# set. Alternatively, set "assigned_heights" to an existing assigned-height
+# table and start at step "regularise".
+trees = ""
+measured_heights = ""
 inventory_long = "ecouves_a5_inventory_long.csv"
 gis = "fichier Gis-coop- EcouvesFichierCoop-201213.xls"
 francois = "fichier Francois- -Ecouves-Temoins et Base H ouppier.xls"
